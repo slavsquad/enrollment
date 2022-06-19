@@ -1,0 +1,48 @@
+plugins {
+	id 'org.springframework.boot' version '2.7.0'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+}
+
+group = 'org.product.catalog.analyzer'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+
+	//boot
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-configuration-processor'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	//lombok
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	//database
+	runtimeOnly 'org.postgresql:postgresql'
+	implementation "org.flywaydb:flyway-core"
+
+	//swagger
+	implementation "io.springfox:springfox-swagger2:$springFoxVersion"
+	implementation "io.springfox:springfox-swagger-ui:$springFoxVersion"
+
+
+	//tests
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

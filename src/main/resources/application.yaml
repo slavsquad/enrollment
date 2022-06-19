@@ -1,0 +1,29 @@
+server:
+  port: 80
+logging:
+  level:
+    root: INFO
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    jdbc-url: jdbc:postgresql://127.0.0.1:5432/catalog?currentSchema=product
+    username: postgres
+    password: postgres
+    pool-size: 30
+    hikari:
+      transaction-isolation: TRANSACTION_READ_UNCOMMITTED
+  flyway:
+    url: jdbc:postgresql://127.0.0.1:5432/catalog
+    schemas: product
+    user: postgres
+    password: postgres
+
+springfox:
+  documentation:
+    service-version: local
+
+urls:
+  app:
+    imports:
+      root: /imports
