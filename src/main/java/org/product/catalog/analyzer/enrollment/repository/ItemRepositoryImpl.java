@@ -15,16 +15,35 @@ public class ItemRepositoryImpl implements ItemRepository {
     @Override
     public int save(Item item) {
 
-        return jdbcTemplate.update("INSERT INTO " +
-                            "item (id, type, name, date, parent_id, price) " +
-                        "VALUES(?::uuid,?,?,?::timestamp without time zone,?::uuid,?) " +
-                        "ON CONFLICT (id) DO UPDATE SET " +
-                            "type = excluded.type, " +
-                            "name = excluded.name, " +
-                            "parent_id = excluded.parent_id," +
-                            "price = excluded.price,"+
-                            "date = excluded.date",
-                item.getId(), item.getType(), item.getName(), item.getDate(), item.getParentId(), item.getPrice());
+        return jdbcTemplate.update("""
+                        INSERT INTO 
+                            item (
+                                id, 
+                                type, 
+                                name, 
+                                update_date, 
+                                parent_id, 
+                                price) 
+                            VALUES(
+                                ?::uuid, 
+                                ?,  
+                                ?, 
+                                ?::timestamp without time zone, 
+                                ?::uuid, 
+                                ?)
+                        ON CONFLICT (id) DO 
+                            UPDATE SET
+                                type = excluded.type,
+                                name = excluded.name,
+                                parent_id = excluded.parent_id,
+                                price = excluded.price,
+                                update_date = excluded.update_date""",
+                item.getId(),
+                item.getType(),
+                item.getName(),
+                item.getUpdateDate(),
+                item.getParentId(),
+                item.getPrice());
     }
 
     @Override

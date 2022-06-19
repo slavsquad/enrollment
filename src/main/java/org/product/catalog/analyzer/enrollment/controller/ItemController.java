@@ -34,7 +34,7 @@ public class ItemController {
 
         for (Item item : importRequest.getItems()) {
             log.info("REST controller add: {}", item);
-            item.setDate(importRequest.getUpdateDate());
+            item.setUpdateDate(importRequest.getUpdateDate());
             itemService.addItem(item);
         }
     }
