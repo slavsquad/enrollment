@@ -5,5 +5,5 @@ CREATE TABLE item
     name character varying(50) NOT NULL,
     parent_id uuid,
     price integer,
-    date timestamp without time zone
+    update_date timestamp without time zone
 );
