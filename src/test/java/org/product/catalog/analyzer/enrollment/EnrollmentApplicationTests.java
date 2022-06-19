@@ -1,4 +1,4 @@
-package org.product.catalog.analizer.enrollment;
+package org.product.catalog.analyzer.enrollment;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
