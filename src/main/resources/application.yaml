@@ -28,6 +28,5 @@ springfox:
     service-version: local
 
 urls:
-  app:
-    imports:
-      root: /imports
+  imports: /imports
+  nodes: /nodes
