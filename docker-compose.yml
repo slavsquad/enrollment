@@ -1,0 +1,19 @@
+version: '3.1'
+services:
+  app:
+    container_name: enrollment
+    image: enrollment
+    build: ./
+    ports:
+      - "80:80"
+    depends_on:
+      - dbpostgresql
+  dbpostgresql:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+
