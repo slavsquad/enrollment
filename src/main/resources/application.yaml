@@ -4,6 +4,10 @@ logging:
   level:
     root: INFO
 
+springdoc:
+  swagger-ui:
+    disable-swagger-default-url: true
+
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
