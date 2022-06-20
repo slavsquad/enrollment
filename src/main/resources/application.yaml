@@ -7,15 +7,15 @@ logging:
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    jdbc-url: jdbc:postgresql://127.0.0.1:5432/catalog?currentSchema=product
+    jdbc-url: jdbc:postgresql://dbpostgresql:5432/postgres?currentSchema=catalog
     username: postgres
     password: postgres
     pool-size: 30
     hikari:
       transaction-isolation: TRANSACTION_READ_UNCOMMITTED
   flyway:
-    url: jdbc:postgresql://127.0.0.1:5432/catalog
-    schemas: product
+    url: jdbc:postgresql://dbpostgresql:5432/postgres
+    schemas: catalog
     user: postgres
     password: postgres
 
