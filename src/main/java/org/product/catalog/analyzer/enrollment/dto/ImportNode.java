@@ -1,8 +1,6 @@
 package org.product.catalog.analyzer.enrollment.dto;
 
-import lombok.AccessLevel;
 import lombok.Data;
-import lombok.experimental.FieldDefaults;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -10,8 +8,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @Data
-@FieldDefaults(level = AccessLevel.PRIVATE)
-public class Item {
+public class ImportNode {
 
     @NotNull
     private  UUID id;
@@ -25,7 +22,7 @@ public class Item {
 
     private UUID parentId;
 
-    Integer price;
+    private Integer price;
 
     private Date updateDate;
 }

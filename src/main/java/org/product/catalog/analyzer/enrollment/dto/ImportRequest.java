@@ -1,5 +1,6 @@
 package org.product.catalog.analyzer.enrollment.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
@@ -15,7 +16,8 @@ public class ImportRequest {
 
     @Valid
     @NotNull
-    private List<Item> items;
+    @JsonAlias("items")
+    private List<ImportNode> nodes;
 
     @NotNull
     private Date updateDate;
