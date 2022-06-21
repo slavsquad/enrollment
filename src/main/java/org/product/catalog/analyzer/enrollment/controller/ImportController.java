@@ -46,7 +46,7 @@ public class ImportController {
                 throw new ArgumentNotValidException("Category price must be null!");
             }
             if ("OFFER".equals(item.getType()) && (item.getPrice() == null || item.getPrice() < 0)) {
-                throw new ArgumentNotValidException("Offer price must not be null!");
+                throw new ArgumentNotValidException("Offer price must not be null or be positive number!");
             }
         }
     }
