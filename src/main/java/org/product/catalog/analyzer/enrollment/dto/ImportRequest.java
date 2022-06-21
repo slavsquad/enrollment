@@ -7,6 +7,7 @@ import lombok.experimental.FieldDefaults;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -14,7 +15,7 @@ public class ImportRequest {
 
     @Valid
     @NotNull
-    private Item[] items;
+    private List<Item> items;
 
     @NotNull
     private Date updateDate;
