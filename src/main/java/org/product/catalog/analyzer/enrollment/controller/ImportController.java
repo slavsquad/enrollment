@@ -8,8 +8,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.product.catalog.analyzer.enrollment.dto.ImportRequest;
 import org.product.catalog.analyzer.enrollment.dto.Item;
 import org.product.catalog.analyzer.enrollment.service.ItemService;
+import org.product.catalog.analyzer.enrollment.validation.exception.ArgumentNotValidException;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 
@@ -25,9 +29,9 @@ public class ImportController {
 
     @ApiOperation(value = "Размещение записей в каталоге")
     @PostMapping
-    public void addItem(@Valid @RequestBody ImportRequest importRequest) {
+    public void addItem(@Valid @RequestBody ImportRequest importRequest) throws Exception {
 
-        //isValid(importDTO.getItems());
+        isValid(importRequest.getItems());
 
         for (Item item : importRequest.getItems()) {
             log.info("REST controller add: {}", item);
@@ -35,7 +39,15 @@ public class ImportController {
             itemService.addItem(item);
         }
     }
-    private void isValid(Item[] items) {
 
+    private void isValid(Item[] items) throws Exception {
+        for (Item item : items) {
+            if ("CATEGORY".equals(item.getType()) && item.getPrice() != null) {
+                throw new ArgumentNotValidException("Category price must be null!");
+            }
+            if ("OFFER".equals(item.getType()) && (item.getPrice() == null || item.getPrice() < 0)) {
+                throw new ArgumentNotValidException("Offer price must not be null!");
+            }
+        }
     }
 }
