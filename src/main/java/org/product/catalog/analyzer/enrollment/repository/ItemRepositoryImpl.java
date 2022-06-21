@@ -5,7 +5,9 @@ import org.product.catalog.analyzer.enrollment.dto.Item;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Repository
 @AllArgsConstructor
@@ -47,7 +49,14 @@ public class ItemRepositoryImpl implements ItemRepository {
     }
 
     @Override
-    public Set<String> findCategoryListId() {
-        return null;
+    public Set<UUID> findCategoryAllId() {
+        return new HashSet<>(jdbcTemplate.queryForList("""
+                        SELECT 
+                            id 
+                        FROM 
+                            item 
+                        WHERE 
+                            type = 'CATEGORY'""",
+                UUID.class));
     }
 }
