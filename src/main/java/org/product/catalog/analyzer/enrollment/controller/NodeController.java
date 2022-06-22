@@ -42,7 +42,7 @@ public class NodeController {
     @ApiOperation(value = "Получение записей из каталога")
     public ResponseEntity<Node> getNode(@RequestParam UUID id) {
         log.info("Get request info for node by id: {}",id);
-        final Node result = nodeService.findById(id).get();
+        final Node result = nodeService.findById(id).orElse(null);
         log.info("Find node: {}",nodeService.findById(id));
         return new ResponseEntity<>(result, HttpStatus.OK);
     }

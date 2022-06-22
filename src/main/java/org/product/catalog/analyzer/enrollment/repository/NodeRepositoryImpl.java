@@ -3,6 +3,7 @@ package org.product.catalog.analyzer.enrollment.repository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.product.catalog.analyzer.enrollment.dto.Node;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,20 +18,25 @@ public class NodeRepositoryImpl implements NodeRepository {
 
     @Override
     public Optional<Node> findById(UUID id) {
-        return jdbcTemplate.queryForObject("""
-                        SELECT id, type, name, parent_id, price, to_char(date, 'yyyy-mm-dd hh24:mi:ss') as date
-                           FROM node
-                           WHERE id = ?::uuid""",
-                (rs, rowNum) -> Optional.of(new Node(
-                        UUID.fromString(rs.getString("id")),
-                        rs.getString("type"),
-                        rs.getString("name"),
-                        rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
-                        rs.getInt("price"),
-                        rs.getTimestamp("date"),
-                        null
-                )),
-                id);
+        try {
+            return jdbcTemplate.queryForObject("""
+                            SELECT id, type, name, parent_id, price, to_char(date, 'yyyy-mm-dd hh24:mi:ss') as date
+                               FROM node
+                               WHERE id = ?::uuid""",
+                    (rs, rowNum) -> Optional.of(new Node(
+                            UUID.fromString(rs.getString("id")),
+                            rs.getString("type"),
+                            rs.getString("name"),
+                            rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
+                            rs.getInt("price"),
+                            rs.getTimestamp("date"),
+                            null
+                    )),
+                    id);
+        } catch (EmptyResultDataAccessException e) {
+            log.info("Node with id:{} didn't find!", id);
+            return Optional.empty();
+        }
     }
 
     @Override
