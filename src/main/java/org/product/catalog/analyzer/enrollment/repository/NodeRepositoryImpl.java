@@ -17,26 +17,9 @@ public class NodeRepositoryImpl implements NodeRepository {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
+    @Transactional
     public Optional<Node> findById(UUID id) {
-        try {
-            return jdbcTemplate.queryForObject("""
-                            SELECT id, type, name, parent_id, price, to_char(date, 'yyyy-mm-dd hh24:mi:ss') as date
-                               FROM node
-                               WHERE id = ?::uuid""",
-                    (rs, rowNum) -> Optional.of(new Node(
-                            UUID.fromString(rs.getString("id")),
-                            rs.getString("type"),
-                            rs.getString("name"),
-                            rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
-                            rs.getInt("price"),
-                            rs.getTimestamp("date"),
-                            null
-                    )),
-                    id);
-        } catch (EmptyResultDataAccessException e) {
-            log.info("Node with id:{} didn't find!", id);
-            return Optional.empty();
-        }
+        return findByIdTx(id);
     }
 
     @Override
@@ -57,6 +40,27 @@ public class NodeRepositoryImpl implements NodeRepository {
         return count;
     }
 
+    private Optional<Node> findByIdTx(UUID id){
+        try {
+            return jdbcTemplate.queryForObject("""
+                            SELECT id, type, name, parent_id, price, to_char(date, 'yyyy-mm-dd hh24:mi:ss') as date
+                               FROM node
+                               WHERE id = ?::uuid""",
+                    (rs, rowNum) -> Optional.of(new Node(
+                            UUID.fromString(rs.getString("id")),
+                            rs.getString("type"),
+                            rs.getString("name"),
+                            rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
+                            rs.getInt("price"),
+                            rs.getTimestamp("date"),
+                            null
+                    )),
+                    id);
+        } catch (EmptyResultDataAccessException e) {
+            log.info("Node with id:{} didn't find!", id);
+            return Optional.empty();
+        }
+    }
     private int saveTx(Node node) {
         int count = jdbcTemplate.update("""
                         INSERT INTO 
