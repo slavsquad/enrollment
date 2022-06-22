@@ -4,6 +4,6 @@ CREATE TABLE node
     type character varying(50) NOT NULL,
     name character varying(50) NOT NULL,
     parent_id uuid,
-    price integer NOT NULL,
+    price integer,
     date timestamp with time zone
 );
