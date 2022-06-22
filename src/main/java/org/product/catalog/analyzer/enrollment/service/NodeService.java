@@ -1,14 +1,13 @@
 package org.product.catalog.analyzer.enrollment.service;
 
-import org.product.catalog.analyzer.enrollment.dto.ImportNode;
+import org.product.catalog.analyzer.enrollment.dto.Node;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public interface NodeService {
-    void addItem(ImportNode node);
-    void importNodes(List<ImportNode> nodes, Date updateDate);
+    void addNode(Node node);
+
+    Optional<Node> findById(UUID id);
+    void importNodes(List<Node> nodes, Date updateDate);
     Set<UUID> findCategoryAllId();
 }

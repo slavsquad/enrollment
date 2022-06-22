@@ -2,15 +2,12 @@ package org.product.catalog.analyzer.enrollment.repository;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.product.catalog.analyzer.enrollment.dto.ImportNode;
+import org.product.catalog.analyzer.enrollment.dto.Node;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Repository
@@ -19,38 +16,56 @@ public class NodeRepositoryImpl implements NodeRepository {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
+    public Optional<Node> findById(UUID id) {
+        return jdbcTemplate.queryForObject("""
+                        SELECT id, type, name, parent_id, price, to_char(date, 'yyyy-mm-dd hh24:mi:ss') as date
+                           FROM node
+                           WHERE id = ?::uuid""",
+                (rs, rowNum) -> Optional.of(new Node(
+                        UUID.fromString(rs.getString("id")),
+                        rs.getString("type"),
+                        rs.getString("name"),
+                        rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
+                        rs.getInt("price"),
+                        rs.getTimestamp("date"),
+                        null
+                )),
+                id);
+    }
+
+    @Override
     @Transactional
-    public int save(ImportNode node) {
+    public int save(Node node) {
         return saveTx(node);
     }
 
     @Override
     @Transactional
-    public int saveAll(List<ImportNode> nodes) {
+    public int saveAll(List<Node> nodes) {
         log.info("Start save nodes!");
         int count = 0;
-        for (ImportNode node : nodes) {
+        for (Node node : nodes) {
             count += saveTx(node);
         }
         log.info("Finish save {} nodes!", count);
         return count;
     }
 
-    private int saveTx(ImportNode node) {
+    private int saveTx(Node node) {
         int count = jdbcTemplate.update("""
                         INSERT INTO 
-                            item (
+                            node (
                                 id, 
                                 type, 
                                 name, 
-                                update_date, 
+                                date, 
                                 parent_id, 
                                 price) 
                             VALUES(
                                 ?::uuid, 
                                 ?,  
                                 ?, 
-                                ?::timestamp without time zone, 
+                                ?::timestamp with time zone, 
                                 ?::uuid, 
                                 ?)
                         ON CONFLICT (id) DO 
@@ -59,11 +74,11 @@ public class NodeRepositoryImpl implements NodeRepository {
                                 name = excluded.name,
                                 parent_id = excluded.parent_id,
                                 price = excluded.price,
-                                update_date = excluded.update_date""",
+                                date = excluded.date""",
                 node.getId(),
                 node.getType(),
                 node.getName(),
-                node.getUpdateDate(),
+                node.getDate(),
                 node.getParentId(),
                 node.getPrice());
         log.info("Save: {} is successfully complete!", node);
@@ -76,7 +91,7 @@ public class NodeRepositoryImpl implements NodeRepository {
                         SELECT 
                             id 
                         FROM 
-                            item 
+                            node 
                         WHERE 
                             type = 'CATEGORY'""",
                 UUID.class));
