@@ -9,6 +9,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import static org.product.catalog.analyzer.enrollment.dto.NodeType.CATEGORY;
+import static org.product.catalog.analyzer.enrollment.dto.NodeType.OFFER;
+
 @Data
 @AllArgsConstructor
 public class Node {
@@ -17,7 +20,7 @@ public class Node {
     private  UUID id;
 
     @NotNull
-    @Pattern(regexp = "^OFFER$|^CATEGORY$")
+    @Pattern(regexp = "^" + CATEGORY + "$|^" + OFFER + "$")
     private String type;
 
     @NotNull
