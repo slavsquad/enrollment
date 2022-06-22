@@ -1,5 +1,7 @@
 package org.product.catalog.analyzer.enrollment.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -30,20 +32,13 @@ public class Node {
 
     private Integer price;
 
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private Date date;
 
     private List<Node> children;
 
-    @Override
-    public String toString() {
-        return "Node{" +
-                "id=" + id +
-                ", type='" + type + '\'' +
-                ", name='" + name + '\'' +
-                ", parentId=" + parentId +
-                ", price=" + price +
-                ", date=" + date +
-                ", children=" + children +
-                '}';
-    }
+    @JsonIgnore
+    private int offerCount;
+    @JsonIgnore
+    private int sum;
 }
