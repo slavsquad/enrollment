@@ -6,7 +6,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.product.catalog.analyzer.enrollment.dto.ImportRequest;
-import org.product.catalog.analyzer.enrollment.dto.ImportNode;
+import org.product.catalog.analyzer.enrollment.dto.Node;
 import org.product.catalog.analyzer.enrollment.service.NodeService;
 import org.product.catalog.analyzer.enrollment.validation.exception.ArgumentNotValidException;
 import org.springframework.http.HttpStatus;
@@ -28,35 +28,37 @@ import java.util.stream.Collectors;
 @Api(value = "API импортирования записей", protocols = "http,https")
 public class NodeController {
 
-    private final NodeService itemService;
+    private final NodeService nodeService;
 
     @PostMapping("${urls.imports}")
     @ApiOperation(value = "Размещение записей в каталоге")
     public void importNodes(@Valid @RequestBody ImportRequest importRequest) throws Exception {
-        final List<ImportNode> nodes = importRequest.getNodes();
+        final List<Node> nodes = importRequest.getNodes();
         validateImportNodes(nodes);
-        itemService.importNodes(nodes, importRequest.getUpdateDate());
+        nodeService.importNodes(nodes, importRequest.getUpdateDate());
     }
 
     @GetMapping("${urls.nodes}")
     @ApiOperation(value = "Получение записей из каталога")
-    public ResponseEntity<Boolean> getNode() {
-        log.info("GET ITEM METHOD");
-        return new ResponseEntity<>(true, HttpStatus.OK);
+    public ResponseEntity<Node> getNode(@RequestParam UUID id) {
+        log.info("Get request info for node by id: {}",id);
+        final Node result = nodeService.findById(id).get();
+        log.info("Find node: {}",nodeService.findById(id));
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    private void validateImportNodes(List<ImportNode> nodes) throws Exception {
+    private void validateImportNodes(List<Node> nodes) throws Exception {
 
         final Set<UUID> idSet = new HashSet<>();
 
-        final Set<UUID> categoryIdSet = itemService.findCategoryAllId();
+        final Set<UUID> categoryIdSet = nodeService.findCategoryAllId();
         categoryIdSet.addAll(nodes
                 .stream()
                 .filter(node -> "CATEGORY".equals(node.getType()))
-                .map(ImportNode::getId)
+                .map(Node::getId)
                 .collect(Collectors.toSet()));
 
-        for (ImportNode node : nodes) {
+        for (Node node : nodes) {
             idSet.add(node.getId());
             if ("CATEGORY".equals(node.getType()) && node.getPrice() != null) {
                 throw new ArgumentNotValidException("Category price must be null!");
