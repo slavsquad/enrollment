@@ -17,7 +17,7 @@ public class ImportRequest {
     @Valid
     @NotNull
     @JsonAlias("items")
-    private List<ImportNode> nodes;
+    private List<Node> nodes;
 
     @NotNull
     private Date updateDate;
