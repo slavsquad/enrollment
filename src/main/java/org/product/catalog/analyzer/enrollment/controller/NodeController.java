@@ -10,6 +10,7 @@ import org.product.catalog.analyzer.enrollment.dto.Node;
 import org.product.catalog.analyzer.enrollment.dto.NodeType;
 import org.product.catalog.analyzer.enrollment.service.NodeService;
 import org.product.catalog.analyzer.enrollment.validation.exception.ArgumentNotValidException;
+import org.product.catalog.analyzer.enrollment.validation.exception.NotFindNodeException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -42,14 +43,15 @@ public class NodeController {
 
     @GetMapping("${urls.nodes}")
     @ApiOperation(value = "Получение записей из каталога")
-    public ResponseEntity<Node> getNode(@RequestParam UUID id) {
+    public ResponseEntity<Node> getNode(@RequestParam UUID id) throws NotFindNodeException {
         log.info("Get request info for node by id: {}", id);
         final Node result = nodeService.findById(id);
+        if (result == null) throw new NotFindNodeException("Node with id: " + id + " didn't find!");
         log.info("Find node with ID: {}", result.getId());
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    private void validateImportNodes(List<Node> nodes) throws Exception {
+    private void validateImportNodes(List<Node> nodes) throws ArgumentNotValidException {
         log.info("Start validation: {} nodes for import.", nodes.size());
         final Set<UUID> idSet = new HashSet<>();
 
