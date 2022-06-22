@@ -7,7 +7,9 @@ import java.util.*;
 public interface NodeService {
     void addNode(Node node);
 
-    Optional<Node> findById(UUID id);
+    Node findById(UUID id);
+
     void importNodes(List<Node> nodes, Date updateDate);
+
     Set<UUID> findCategoryAllId();
 }

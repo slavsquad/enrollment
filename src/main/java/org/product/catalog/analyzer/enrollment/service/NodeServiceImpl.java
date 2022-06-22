@@ -6,7 +6,10 @@ import org.product.catalog.analyzer.enrollment.dto.Node;
 import org.product.catalog.analyzer.enrollment.repository.NodeRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -22,8 +25,8 @@ public class NodeServiceImpl implements NodeService {
     }
 
     @Override
-    public Optional<Node> findById(UUID id) {
-        log.info("Service is looking for node by id: {}", id);
+    public Node findById(UUID id) {
+        log.info("Looking for node by id: {}", id);
         return nodeRepository.findById(id);
     }
 
@@ -31,18 +34,15 @@ public class NodeServiceImpl implements NodeService {
     public void importNodes(List<Node> nodes, Date updateDate) {
         for (Node item : nodes) {
             item.setDate(updateDate);
-            if ("CATEGORY".equals(item.getType())) {
-                item.setPrice(0);
-            }
         }
-        log.info("{} items are ready to import!", nodes.size());
+        log.info("{} nodes are ready to import!", nodes.size());
         nodeRepository.saveAll(nodes);
     }
 
     @Override
     public Set<UUID> findCategoryAllId() {
         final Set<UUID> categoryIdSet = nodeRepository.findCategoryAllId();
-        log.info("Find category all id : {}", categoryIdSet);
+        log.info("Find {} id category from repository!", categoryIdSet.size());
         return categoryIdSet;
     }
 }
