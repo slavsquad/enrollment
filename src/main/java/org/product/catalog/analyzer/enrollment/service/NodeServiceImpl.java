@@ -11,6 +11,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Реализация интерфейса описывающего сервисные методы вставки, поиска и удаления узлов.
+ *
+ * @author Stepanenko Stanislav
+ */
 @Slf4j
 @Service
 @AllArgsConstructor
@@ -18,18 +23,42 @@ public class NodeServiceImpl implements NodeService {
 
     private final NodeRepository nodeRepository;
 
+
+    /**
+     * Реализация метода вставки узла(товара/категории) в каталоге товаров,
+     * путем добавленные новой позиций либо обновление текущей.
+     * Метод возвращает количество сохраненных позиций.
+     *
+     * @param node - узел, который необходимо добавить в каталог.
+     */
     @Override
     public void addNode(Node node) {
         log.info("Node with id:{} is ready to import!", node.getId());
         nodeRepository.save(node);
     }
 
+    /**
+     * Реализация метода поиска узла в полную глубину по идентификатору.
+     * Метод возвращает узел со всеми потомками, полностью отображая
+     * структуру каталога товаров.
+     *
+     * @param id - идентификатор корневого узла(товара/категории).
+     * @return узел со всеми потомками, или {@code null} если узел не найден.
+     */
     @Override
     public Node findById(UUID id) {
         log.info("Looking for node by id: {}", id);
         return nodeRepository.findById(id);
     }
 
+    /**
+     * Реализация метода импортирования узлов(товаров/категории) в каталоге товаров,
+     * путем добавленные новых либо обновление текущих.
+     * Метод возвращает количество сохраненных позиций.
+     *
+     * @param nodes - список узлов, который необходимо добавить в каталог.
+     * @param updateDate - дата импорта узлов в каталог.
+     */
     @Override
     public void importNodes(List<Node> nodes, Date updateDate) {
         for (Node item : nodes) {
@@ -39,6 +68,11 @@ public class NodeServiceImpl implements NodeService {
         nodeRepository.saveAll(nodes);
     }
 
+    /**
+     * Реализация поиска идентификаторов имеющихся в каталоге категорий товаров.
+     *
+     * @return список идентификаторов категорий присутствующий в каталоге.
+     */
     @Override
     public Set<UUID> findCategoryAllId() {
         final Set<UUID> categoryIdSet = nodeRepository.findCategoryAllId();
