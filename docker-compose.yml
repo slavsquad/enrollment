@@ -1,0 +1,23 @@
+version: '3.1'
+services:
+  app:
+    container_name: enrollment
+    image: enrollment
+    build: ./
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - dbpostgresql
+  dbpostgresql:
+    container_name: postgres
+    image: postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data

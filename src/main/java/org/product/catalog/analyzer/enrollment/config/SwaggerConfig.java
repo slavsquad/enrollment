@@ -1,13 +1,8 @@
 package org.product.catalog.analyzer.enrollment.config;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.product.catalog.analyzer.enrollment.validation.exception.ArgumentNotValidException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
@@ -16,56 +11,46 @@ import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
-@Slf4j
-@EnableWebMvc
+/**
+ * Конфигурационный класс, предназначен для настройки автоматического описания
+ * методов взаимодействия с приложением.
+ *
+ * @author Stepanenko Stanislav
+ */
 @Configuration
 @EnableSwagger2
-public class SwaggerConfig implements WebMvcConfigurer {
+public class SwaggerConfig {
 
-    @Value("${springfox.documentation.service-version}")
-    private String serviceVersion;
 
-    @Override
-    public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addRedirectViewController("/api/v2/api-docs",
-                "/v2/api-docs");
-        registry.addRedirectViewController("/api/swagger-resources/configuration/ui",
-                "/swagger-resources/configuration/ui");
-        registry.addRedirectViewController("/api/swagger-resources/configuration/security",
-                "/swagger-resources/configuration/security");
-        registry.addRedirectViewController("/api/swagger-resources",
-                "/swagger-resources");
-    }
-
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/api/swagger-ui.html**")
-                .addResourceLocations("classpath:/META-INF/resources/swagger-ui.html");
-        registry.addResourceHandler("/api/webjars/**")
-                .addResourceLocations("classpath:/META-INF/resources/webjars/");
-    }
-
+    /**
+     * Метод создает конструктор, который служит для дальнейшего построения интерфейса,
+     * инструмента автоматического описания методов взаимодействия с приложением(Springfox framework).
+     *
+     * @return - конструктор для построения интерфеса, инструмента автоматического описания
+     * методов взаимодействия с приложением(Springfox framework)
+     */
     @Bean
-    public Docket api() {
-        Docket docket = new Docket(DocumentationType.SWAGGER_2)
+    public Docket createDocket() {
+        return new Docket(DocumentationType.SWAGGER_2)
+                .apiInfo(apiInfo())
                 .select()
-                .apis(RequestHandlerSelectors
-                        .basePackage("org.product.catalog.analyzer.enrollment"))
+                .apis(RequestHandlerSelectors.basePackage("org.product.catalog.analyzer.enrollment"))
                 .paths(PathSelectors.any())
-                .build()
-                .apiInfo(apiEndPointsInfo())
-                .pathMapping("/");
-        log.info("Docket: {}", docket);
-        return docket;
-    }
-
-    private ApiInfo apiEndPointsInfo() {
-        return new ApiInfoBuilder()
-                .title("")
-                .description("")
-                .version(serviceVersion)
                 .build();
     }
 
-
+    /**
+     * Приватный метод создает информационное отображение, инструмента автоматического описания
+     * методов взаимодействия с приложением(Springfox framework).
+     *
+     * @return - информационное отображение инструмента, автоматического описания
+     * методов взаимодействия с приложением(Springfox framework)
+     */
+    private ApiInfo apiInfo() {
+        return new ApiInfoBuilder()
+                .title("Mega Market Open API")
+                .description("Вступительное задание в Летнюю Школу Бэкенд Разработки Яндекса 2022")
+                .version("1.0.0")
+                .build();
+    }
 }
