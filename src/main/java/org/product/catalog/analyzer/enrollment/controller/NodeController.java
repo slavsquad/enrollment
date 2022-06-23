@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 @Validated
 @RestController
 @RequiredArgsConstructor
-@Api(value = "API импортирования записей", protocols = "http,https")
+@Api(tags = "Базовые задачи", protocols = "http,https")
 public class NodeController {
 
     private final NodeService nodeService;
@@ -45,7 +45,23 @@ public class NodeController {
      * @throws ArgumentNotValidException если какой либо из аргументов запроса не прошёл проверку.
      */
     @PostMapping("${urls.imports}")
-    @ApiOperation(value = "Размещение записей в каталоге")
+    @ApiOperation(value = "- импортирует новые товары и/или категории", notes = """
+            Товары/категории импортированные повторно обновляют текущие. Изменение типа элемента с товара на категорию или с категории на товар не допускается. Порядок элементов в запросе является произвольным.
+                            
+              - uuid товара или категории является уникальным среди товаров и категорий
+              - родителем товара или категории может быть только категория
+              - принадлежность к категории определяется полем parentId
+              - товар или категория могут не иметь родителя (при обновлении parentId на null, элемент остается без родителя)
+              - название элемента не может быть null
+              - у категорий поле price должно содержать null
+              - цена товара не может быть null и должна быть больше либо равна нулю.
+              - при обновлении товара/категории обновленными считаются **все** их параметры
+              - при обновлении параметров элемента обязательно обновляется поле **date** в соответствии с временем обновления
+              - в одном запросе не может быть двух элементов с одинаковым id
+              - дата должна обрабатываться согласно ISO 8601 (такой придерживается OpenAPI). Если дата не удовлетворяет данному формату, необходимо отвечать 400.
+                            
+            Гарантируется, что во входных данных нет циклических зависимостей и поле updateDate монотонно возрастает. Гарантируется, что при проверке передаваемое время кратно секундам.
+            """)
     public void importNodes(@Valid @RequestBody ImportRequest importRequest) throws ArgumentNotValidException {
         final List<Node> nodes = importRequest.getNodes();
         log.info("Received request to import nodes: {} update date: {}.", nodes.size(), importRequest.getUpdateDate());
@@ -62,7 +78,13 @@ public class NodeController {
      * @throws NotFindNodeException если элемент не найден.
      */
     @GetMapping("${urls.nodes}")
-    @ApiOperation(value = "Получение записей из каталога")
+    @ApiOperation(value = "- предоставляет информацию об элементе по идентификатору", notes = """
+            При получении информации о категории также предоставляется информация о её дочерних элементах.
+                            
+              - для пустой категории поле children равно пустому массиву, а для товара равно null
+              - цена категории - это средняя цена всех её товаров, включая товары дочерних категорий. Если категория не содержит товаров цена равна null. При обновлении цены товара, средняя цена категории, которая содержит этот товар, тоже обновляется.              
+                            
+            """)
     public ResponseEntity<Node> getNode(@RequestParam UUID id) throws NotFindNodeException {
         log.info("Get request info for node by id: {}", id);
         final Node result = nodeService.findById(id);
