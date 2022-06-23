@@ -23,6 +23,12 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Класс, реализующий REST-контролер, который отвечает за обработку запросов к приложению
+ * связанными с основными операциями над узлами(продуктами/категориями).
+ *
+ * @author Stepanenko Stanislav
+ */
 @Slf4j
 @Validated
 @RestController
@@ -32,15 +38,29 @@ public class NodeController {
 
     private final NodeService nodeService;
 
+    /**
+     * Метод обрабатывает POST-запрос на импортирование  узлов в каталог товаров.
+     *
+     * @param importRequest - запрос на пакетный импорт узлов.
+     * @throws ArgumentNotValidException если какой либо из аргументов запроса не прошёл проверку.
+     */
     @PostMapping("${urls.imports}")
     @ApiOperation(value = "Размещение записей в каталоге")
-    public void importNodes(@Valid @RequestBody ImportRequest importRequest) throws Exception {
+    public void importNodes(@Valid @RequestBody ImportRequest importRequest) throws ArgumentNotValidException {
         final List<Node> nodes = importRequest.getNodes();
         log.info("Received request to import nodes: {} update date: {}.", nodes.size(), importRequest.getUpdateDate());
         validateImportNodes(nodes);
         nodeService.importNodes(nodes, importRequest.getUpdateDate());
     }
 
+    /**
+     * Метод обрабатывает GET-запрос на поиск узла в полную глубину по идентификатору.
+     * Метод возвращает узел со всеми потомками, полностью отображая структуру каталога товаров.
+     *
+     * @param id - идентификатор корневого узла(товара/категории)
+     * @return ответ в котором содержится узел в JSON формате со всеми потомками
+     * @throws NotFindNodeException если элемент не найден.
+     */
     @GetMapping("${urls.nodes}")
     @ApiOperation(value = "Получение записей из каталога")
     public ResponseEntity<Node> getNode(@RequestParam UUID id) throws NotFindNodeException {
@@ -51,6 +71,12 @@ public class NodeController {
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
+    /**
+     * Приватный метод реализующий ряд проверок перед запуском импорта узлов.
+     *
+     * @param nodes - список узлов которые необходимо проверить.
+     * @throws ArgumentNotValidException если какой либо из узел не прошел проверку.
+     */
     private void validateImportNodes(List<Node> nodes) throws ArgumentNotValidException {
         log.info("Start validation: {} nodes for import.", nodes.size());
         final Set<UUID> idSet = new HashSet<>();
