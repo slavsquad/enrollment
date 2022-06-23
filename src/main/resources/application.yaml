@@ -30,3 +30,4 @@ springfox:
 urls:
   imports: /imports
   nodes: /nodes
+  delete: /delete
