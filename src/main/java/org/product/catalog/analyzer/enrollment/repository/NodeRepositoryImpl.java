@@ -242,4 +242,65 @@ public class NodeRepositoryImpl implements NodeRepository {
                 UUID.class,
                 NodeType.CATEGORY));
     }
+
+    /**
+     * Реализация метода удаления узла по идентификатору.
+     * Метод удаляет узел со всеми потомками если таковые имеются.
+     *
+     * @param id - идентификатор корневого узла(товара/категории).
+     * @return количество удалённых узлов.
+     */
+    @Override
+    @Transactional
+    public int deleteById(UUID id) {
+        int result = 0;
+        result = deleteByIdTx(id);
+        if (result == 0) return 0;
+        result += deleteAllDescendantTx(id);
+        return result;
+    }
+
+    /**
+     * Приватный метод удаляет только корневой узел без потомков.
+     * Предназначен для запуска в транзакции.
+     *
+     * @param id - идентификатор корневого узла(товара/категории).
+     * @return количество удалённых узлов.
+     */
+    private int deleteByIdTx(UUID id) {
+        log.info("Start to delete only root node with ID: {}", id);
+        return jdbcTemplate.update("""
+                        DELETE FROM 
+                            node 
+                        WHERE 
+                            id = ?::uuid;""",
+                id);
+    }
+
+    /**
+     * Приватный метод удаляет всех потомков заданного узла.
+     * Предназначен для запуска в транзакции.
+     *
+     * @param id - идентификатор корневого узла(товара/категории).
+     * @return количество удалённых узлов потомков.
+     */
+    private int deleteAllDescendantTx(UUID id) {
+        log.info("Start to delete all descendants node with ID: {}", id);
+        return jdbcTemplate.update("""
+                           WITH RECURSIVE r AS (
+                           SELECT id, type, name, parent_id, price, date
+                           FROM node
+                           WHERE parent_id = ?::uuid
+                           UNION
+                           SELECT node.id, node.type, node.name, node.parent_id, node.price, node.date
+                           FROM node
+                              JOIN r
+                                  ON node.parent_id = r.id
+                        )
+                        DELETE FROM 
+                            node 
+                        WHERE 
+                            id in (SELECT id FROM r)""",
+                id);
+    }
 }
