@@ -79,4 +79,17 @@ public class NodeServiceImpl implements NodeService {
         log.info("Find {} id category from repository!", categoryIdSet.size());
         return categoryIdSet;
     }
+
+    /**
+     * Реализация сервисного метода удаления узла по идентификатору.
+     * Метод удаляет узел со всеми потомками если таковые имеются.
+     *
+     * @param id - идентификатор корневого узла(товара/категории).
+     * @return количество удалённых узлов.
+     */
+    @Override
+    public int deleteById(UUID id) {
+        log.info("Deleting a node by id: {}", id);
+        return nodeRepository.deleteById(id);
+    }
 }
