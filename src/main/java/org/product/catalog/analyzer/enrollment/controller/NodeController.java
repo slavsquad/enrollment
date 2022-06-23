@@ -70,30 +70,6 @@ public class NodeController {
     }
 
     /**
-     * Метод обрабатывает GET-запрос на поиск узла в полную глубину по идентификатору.
-     * Метод возвращает узел со всеми потомками, полностью отображая структуру каталога товаров.
-     *
-     * @param id - идентификатор корневого узла(товара/категории)
-     * @return ответ в котором содержится узел в JSON формате со всеми потомками
-     * @throws NotFindNodeException если элемент не найден.
-     */
-    @GetMapping("${urls.nodes}")
-    @ApiOperation(value = "- предоставляет информацию об элементе по идентификатору", notes = """
-            При получении информации о категории также предоставляется информация о её дочерних элементах.
-                            
-              - для пустой категории поле children равно пустому массиву, а для товара равно null
-              - цена категории - это средняя цена всех её товаров, включая товары дочерних категорий. Если категория не содержит товаров цена равна null. При обновлении цены товара, средняя цена категории, которая содержит этот товар, тоже обновляется.              
-                            
-            """)
-    public ResponseEntity<Node> getNode(@RequestParam UUID id) throws NotFindNodeException {
-        log.info("Get request info for node by id: {}", id);
-        final Node result = nodeService.findById(id);
-        if (result == null) throw new NotFindNodeException("Node with id: " + id + " didn't find!");
-        log.info("Find node with ID: {}", result.getId());
-        return new ResponseEntity<>(result, HttpStatus.OK);
-    }
-
-    /**
      * Приватный метод реализующий ряд проверок перед запуском импорта узлов.
      *
      * @param nodes - список узлов которые необходимо проверить.
@@ -127,5 +103,51 @@ public class NodeController {
             throw new ArgumentNotValidException("Import records contains duplicates id!");
         }
         log.info("Finish validation: {} nodes for import.", nodes.size());
+    }
+
+    /**
+     * Метод обрабатывает DELETE-запрос на удаление узла в полную глубину по идентификатору.
+     * Метод удаляет узел со всеми потомками.
+     *
+     * @param id - идентификатор корневого узла(товара/категории)
+     * @throws NotFindNodeException если элемент не найден.
+     */
+    @DeleteMapping("${urls.delete}")
+    @ApiOperation(value = "- удаляет элемент по идентификатору", notes = """
+            При удалении категории удаляются все дочерние элементы. Доступ к статистике (истории обновлений) удаленного элемента невозможен.
+                        
+            Так как время удаления не передается, при удалении элемента время обновления родителя изменять не нужно.
+                        
+            Обратите, пожалуйста, внимание на этот обработчик. При его некорректной работе тестирование может быть невозможно.
+            """)
+    public void deleteNode(@RequestParam UUID id) throws NotFindNodeException {
+        log.info("Request for delete node by id: {}", id);
+        final int result = nodeService.deleteById(id);
+        if (result == 0) throw new NotFindNodeException("Node with id: " + id + " didn't find!");
+        log.info("Delete node with ID: {}", id);
+    }
+
+    /**
+     * Метод обрабатывает GET-запрос на поиск узла в полную глубину по идентификатору.
+     * Метод возвращает узел со всеми потомками, полностью отображая структуру каталога товаров.
+     *
+     * @param id - идентификатор корневого узла(товара/категории)
+     * @return ответ в котором содержится узел в JSON формате со всеми потомками
+     * @throws NotFindNodeException если элемент не найден.
+     */
+    @GetMapping("${urls.nodes}")
+    @ApiOperation(value = "- предоставляет информацию об элементе по идентификатору", notes = """
+            При получении информации о категории также предоставляется информация о её дочерних элементах.
+                            
+              - для пустой категории поле children равно пустому массиву, а для товара равно null
+              - цена категории - это средняя цена всех её товаров, включая товары дочерних категорий. Если категория не содержит товаров цена равна null. При обновлении цены товара, средняя цена категории, которая содержит этот товар, тоже обновляется.              
+                            
+            """)
+    public ResponseEntity<Node> getNode(@RequestParam UUID id) throws NotFindNodeException {
+        log.info("Get request info for node by id: {}", id);
+        final Node result = nodeService.findById(id);
+        if (result == null) throw new NotFindNodeException("Node with id: " + id + " didn't find!");
+        log.info("Find node with ID: {}", result.getId());
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 }
