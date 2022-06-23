@@ -12,6 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
 
+/**
+ * Реализация интерфейса описывающего методы взаимодействия приложения с базой данных.
+ *
+ * @author Stepanenko Stanislav
+ */
 @Slf4j
 @Repository
 @AllArgsConstructor
@@ -21,6 +26,14 @@ public class NodeRepositoryImpl implements NodeRepository {
     final private static byte BLACK = 1;
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * Реализация метода поиска узла в полную глубину по идентификатору.
+     * Метод возвращает узел со всеми потомками, полностью отображая
+     * структуру каталога товаров.
+     *
+     * @param id - идентификатор корневого узла(товара/категории).
+     * @return узел со всеми потомками, или {@code null} если узел не найден.
+     */
     @Override
     @Transactional
     public Node findById(UUID id) {
@@ -73,46 +86,14 @@ public class NodeRepositoryImpl implements NodeRepository {
         return result;
     }
 
-    private List<Node> findAllChildrenByIdTx(UUID id) {
-        log.info("Start find children by node id:{}", id);
-        return jdbcTemplate.query("""
-                        SELECT id, type, name, parent_id, price, to_char(date, 'yyyy-mm-dd hh24:mi:ss') as date
-                           FROM node
-                           WHERE parent_id = ?::uuid""",
-                (rs, rowNum) -> new Node(
-                        UUID.fromString(rs.getString("id")),
-                        rs.getString("type"),
-                        rs.getString("name"),
-                        rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
-                        rs.getObject("price", Integer.class),
-                        rs.getTimestamp("date"),
-                        null,
-                        NodeType.OFFER.equals(rs.getString("type")) ? 1 : 0,
-                        rs.getInt("price")
-                ),
-                id);
-    }
-
-
-    @Override
-    @Transactional
-    public int save(Node node) {
-        log.info("Start save node:{}", node.getId());
-        return saveTx(node);
-    }
-
-    @Override
-    @Transactional
-    public int saveAll(List<Node> nodes) {
-        log.info("Start save nodes!");
-        int count = 0;
-        for (Node node : nodes) {
-            count += saveTx(node);
-        }
-        log.info("Finish save {} nodes!", count);
-        return count;
-    }
-
+    /**
+     * Приватный метод поиска узла без каких-либо потомков по идентификатору,
+     * для исполнения внутри транзакции.
+     * Метод возвращает узел без каких-либо потомков.
+     *
+     * @param id - идентификатор корневого узла(товара/категории).
+     * @return узел каталога товаров, или {@code null} если узел не найден.
+     */
     private Node findByIdTx(UUID id) {
         try {
             return jdbcTemplate.queryForObject("""
@@ -137,6 +118,58 @@ public class NodeRepositoryImpl implements NodeRepository {
         }
     }
 
+    /**
+     * Приватный метод поиска прямых потомков узла по идентификатору,
+     * для исполнения внутри транзакции.
+     * Метод возвращает прямых потомков узла по указанному идентификатору.
+     *
+     * @param id - идентификатор корневого узла(товара/категории).
+     * @return список прямых потомков узла.
+     */
+    private List<Node> findAllChildrenByIdTx(UUID id) {
+        log.info("Start find children by node id:{}", id);
+        return jdbcTemplate.query("""
+                        SELECT id, type, name, parent_id, price, to_char(date, 'yyyy-mm-dd hh24:mi:ss') as date
+                           FROM node
+                           WHERE parent_id = ?::uuid""",
+                (rs, rowNum) -> new Node(
+                        UUID.fromString(rs.getString("id")),
+                        rs.getString("type"),
+                        rs.getString("name"),
+                        rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
+                        rs.getObject("price", Integer.class),
+                        rs.getTimestamp("date"),
+                        null,
+                        NodeType.OFFER.equals(rs.getString("type")) ? 1 : 0,
+                        rs.getInt("price")
+                ),
+                id);
+    }
+
+
+    /**
+     * Реализация метода сохранения узла(товара/категории) в каталоге товаров,
+     * путем добавленные новой позиций либо обновление текущей.
+     * Метод возвращает количество сохраненных позиций.
+     *
+     * @param node - узел, который необходимо добавить в каталог.
+     * @return количество сохранённых позиций.
+     */
+    @Override
+    @Transactional
+    public int save(Node node) {
+        log.info("Start save node:{}", node.getId());
+        return saveTx(node);
+    }
+
+    /**
+     * Приватный метод сохранения узла(товара/категории) в каталоге товаров
+     * для исполнения внутри транзакции.
+     * Метод возвращает количество сохраненных позиций.
+     *
+     * @param node - узел, который необходимо добавить в каталог.
+     * @return количество сохранённых позиций.
+     */
     private int saveTx(Node node) {
         final int count = jdbcTemplate.update("""
                         INSERT INTO 
@@ -171,6 +204,31 @@ public class NodeRepositoryImpl implements NodeRepository {
         return count;
     }
 
+    /**
+     * Реализация метода сохранения списка узлов(товаров/категории) в каталоге товаров,
+     * путем добавленные новых либо обновление текущих.
+     * Метод возвращает количество сохраненных позиций.
+     *
+     * @param nodes - список узлов, который необходимо добавить в каталог.
+     * @return количество сохранённых позиций.
+     */
+    @Override
+    @Transactional
+    public int saveAll(List<Node> nodes) {
+        log.info("Start save nodes!");
+        int count = 0;
+        for (Node node : nodes) {
+            count += saveTx(node);
+        }
+        log.info("Finish save {} nodes!", count);
+        return count;
+    }
+
+    /**
+     * Реализация метода поиска идентификаторов имеющихся в каталоге категорий товаров.
+     *
+     * @return список идентификаторов категорий присутствующий в каталоге.
+     */
     @Override
     @Transactional
     public Set<UUID> findCategoryAllId() {
