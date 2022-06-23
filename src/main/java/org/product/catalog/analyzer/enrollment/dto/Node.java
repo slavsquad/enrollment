@@ -14,6 +14,12 @@ import java.util.UUID;
 import static org.product.catalog.analyzer.enrollment.dto.NodeType.CATEGORY;
 import static org.product.catalog.analyzer.enrollment.dto.NodeType.OFFER;
 
+/**
+ * Класс, реализующий сущность,
+ * которая инкапсулирует данные узла(категория/товар) каталога.
+ *
+ * @author Stepanenko Stanislav
+ */
 @Data
 @AllArgsConstructor
 public class Node {

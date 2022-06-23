@@ -10,6 +10,12 @@ import javax.validation.constraints.NotNull;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Класс, реализующий сущность, которая инкапсулирует данные,
+ * поступающие на вход при импорте элементов.
+ *
+ * @author Stepanenko Stanislav
+ */
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ImportRequest {
