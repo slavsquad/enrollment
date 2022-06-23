@@ -4,12 +4,14 @@ services:
     container_name: enrollment
     image: enrollment
     build: ./
+    restart: unless-stopped
     ports:
       - "80:80"
     depends_on:
       - dbpostgresql
   dbpostgresql:
     image: postgres
+    restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
