@@ -15,8 +15,6 @@ spring:
     username: postgres
     password: postgres
     pool-size: 30
-    hikari:
-      transaction-isolation: TRANSACTION_READ_UNCOMMITTED
   flyway:
     url: jdbc:postgresql://dbpostgresql:5432/postgres
     schemas: catalog
