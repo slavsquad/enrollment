@@ -1,6 +1,8 @@
 package org.product.catalog.analyzer.enrollment.service;
 
 import org.product.catalog.analyzer.enrollment.dto.Node;
+import org.product.catalog.analyzer.enrollment.validation.exception.ArgumentNotValidException;
+import org.product.catalog.analyzer.enrollment.validation.exception.NotFindNodeException;
 
 import java.util.*;
 
@@ -27,8 +29,9 @@ public interface NodeService {
      *
      * @param id - идентификатор корневого узла(товара/категории).
      * @return узел со всеми потомками, или {@code null} если узел не найден.
+     * @throws NotFindNodeException если элемент не найден.
      */
-    Node findById(UUID id);
+    Node findById(UUID id) throws NotFindNodeException;
 
     /**
      * Импортирование узлов(товаров/категории) в каталоге товаров,
@@ -37,8 +40,9 @@ public interface NodeService {
      *
      * @param nodes - список узлов, который необходимо добавить в каталог.
      * @param updateDate - дата импорта узлов в каталог.
+     * @throws ArgumentNotValidException если какой либо из узел не прошел проверку.
      */
-    void importNodes(List<Node> nodes, Date updateDate);
+    void importNodes(List<Node> nodes, Date updateDate) throws ArgumentNotValidException;
 
     /**
      * Поиск идентификаторов имеющихся в каталоге категорий товаров.
@@ -53,6 +57,7 @@ public interface NodeService {
      *
      * @param id - идентификатор корневого узла(товара/категории).
      * @return количество удалённых узлов.
+     * @throws NotFindNodeException если элемент не найден.
      */
-    int deleteById(UUID id);
+    int deleteById(UUID id) throws NotFindNodeException;
 }
