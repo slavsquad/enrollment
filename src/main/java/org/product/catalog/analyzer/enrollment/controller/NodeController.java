@@ -123,8 +123,7 @@ public class NodeController {
     public void deleteNode(@PathVariable UUID id) throws NotFindNodeException {
         log.info("Request for delete node by id: {}", id);
         final int result = nodeService.deleteById(id);
-        if (result == 0) throw new NotFindNodeException("Node with id: " + id + " didn't find!");
-        log.info("Delete node with ID: {}", id);
+        log.info("Delete {} nodes by ID: {}", result, id);
     }
 
     /**
@@ -146,7 +145,6 @@ public class NodeController {
     public ResponseEntity<Node> getNode(@PathVariable UUID id) throws NotFindNodeException {
         log.info("Get request info for node by id: {}", id);
         final Node result = nodeService.findById(id);
-        if (result == null) throw new NotFindNodeException("Node with id: " + id + " didn't find!");
         log.info("Find node with ID: {}", result.getId());
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
