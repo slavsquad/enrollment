@@ -112,7 +112,7 @@ public class NodeController {
      * @param id - идентификатор корневого узла(товара/категории)
      * @throws NotFindNodeException если элемент не найден.
      */
-    @DeleteMapping("${urls.delete}")
+    @DeleteMapping("${urls.delete}/{id}")
     @ApiOperation(value = "- удаляет элемент по идентификатору", notes = """
             При удалении категории удаляются все дочерние элементы. Доступ к статистике (истории обновлений) удаленного элемента невозможен.
                         
@@ -120,7 +120,7 @@ public class NodeController {
                         
             Обратите, пожалуйста, внимание на этот обработчик. При его некорректной работе тестирование может быть невозможно.
             """)
-    public void deleteNode(@RequestParam UUID id) throws NotFindNodeException {
+    public void deleteNode(@PathVariable UUID id) throws NotFindNodeException {
         log.info("Request for delete node by id: {}", id);
         final int result = nodeService.deleteById(id);
         if (result == 0) throw new NotFindNodeException("Node with id: " + id + " didn't find!");
@@ -135,15 +135,15 @@ public class NodeController {
      * @return ответ в котором содержится узел в JSON формате со всеми потомками
      * @throws NotFindNodeException если элемент не найден.
      */
-    @GetMapping("${urls.nodes}")
+    @GetMapping("${urls.nodes}/{id}")
     @ApiOperation(value = "- предоставляет информацию об элементе по идентификатору", notes = """
             При получении информации о категории также предоставляется информация о её дочерних элементах.
                             
               - для пустой категории поле children равно пустому массиву, а для товара равно null
-              - цена категории - это средняя цена всех её товаров, включая товары дочерних категорий. Если категория не содержит товаров цена равна null. При обновлении цены товара, средняя цена категории, которая содержит этот товар, тоже обновляется.              
+              - цена категории - это средняя цена всех её товаров, включая товары дочерних категорий. Если категория не содержит товаров цена равна null. При обновлении цены товара, средняя цена категории, которая содержит этот товар, тоже обновляется.
                             
             """)
-    public ResponseEntity<Node> getNode(@RequestParam UUID id) throws NotFindNodeException {
+    public ResponseEntity<Node> getNode(@PathVariable UUID id) throws NotFindNodeException {
         log.info("Get request info for node by id: {}", id);
         final Node result = nodeService.findById(id);
         if (result == null) throw new NotFindNodeException("Node with id: " + id + " didn't find!");
