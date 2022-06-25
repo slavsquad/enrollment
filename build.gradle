@@ -46,6 +46,8 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testCompileOnly 'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'io.zonky.test:embedded-postgres:1.2.10'
+	testImplementation 'io.zonky.test:embedded-database-spring-test:2.0.0'
 }
 
 tasks.named('test') {
