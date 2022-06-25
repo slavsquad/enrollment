@@ -1,0 +1,31 @@
+springdoc:
+  swagger-ui:
+    disable-swagger-default-url: true
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: postgres
+    type: com.zaxxer.hikari.HikariDataSource
+  flyway:
+    user: postgres
+    password: postgres
+
+
+springfox:
+  documentation:
+    service-version: local
+
+urls:
+  imports: /imports
+  nodes: /nodes
+  delete: /delete
+
+zonky:
+  test:
+    database:
+      postgres:
+        docker:
+          image: postgres
+      provider: ZONKY
