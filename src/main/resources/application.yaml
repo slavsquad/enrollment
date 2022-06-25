@@ -11,10 +11,10 @@ springdoc:
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    jdbc-url: jdbc:postgresql://dbpostgresql:5432/postgres?currentSchema=catalog
+    url: jdbc:postgresql://dbpostgresql:5432/postgres?currentSchema=catalog
     username: postgres
     password: postgres
-    pool-size: 30
+    type: com.zaxxer.hikari.HikariDataSource
   flyway:
     url: jdbc:postgresql://dbpostgresql:5432/postgres
     schemas: catalog
