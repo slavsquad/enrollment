@@ -51,7 +51,7 @@ public interface NodeRepository {
      * @param nodes - список узлов, который необходимо добавить в каталог.
      * @return количество сохранённых позиций.
      */
-    int saveAll(List<Node> nodes) throws ArgumentNotValidException;
+    int saveAll(List<Node> nodes);
 
     /**
      * Удаление узла по идентификатору.
