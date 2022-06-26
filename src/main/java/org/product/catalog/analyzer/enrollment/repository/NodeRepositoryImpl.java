@@ -4,12 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.product.catalog.analyzer.enrollment.dto.Node;
 import org.product.catalog.analyzer.enrollment.dto.NodeType;
-import org.product.catalog.analyzer.enrollment.validation.exception.ArgumentNotValidException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -106,6 +103,7 @@ public class NodeRepositoryImpl implements NodeRepository {
                             rs.getString("type"),
                             rs.getString("name"),
                             rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
+                            rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
                             rs.getObject("price", Integer.class),
                             rs.getTimestamp("date"),
                             null,
@@ -138,6 +136,7 @@ public class NodeRepositoryImpl implements NodeRepository {
                         rs.getString("type"),
                         rs.getString("name"),
                         rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
+                        rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
                         rs.getObject("price", Integer.class),
                         rs.getTimestamp("date"),
                         null,
@@ -159,7 +158,11 @@ public class NodeRepositoryImpl implements NodeRepository {
     @Override
     public int save(Node node) {
         log.info("Start save node:{}", node.getId());
-        return saveTx(node);
+        final int result = saveTx(node);
+        if (node.getParentId() == null) return result;
+        updateAllParentCategory(node.getParentId(), node.getDate());
+        log.info("Finish save node:{}", node.getId());
+        return result;
     }
 
     /**
@@ -216,29 +219,72 @@ public class NodeRepositoryImpl implements NodeRepository {
     public int saveAll(List<Node> nodes) {
         log.info("Start save nodes!");
         int count = 0;
+        final Set<UUID> parentCategorySet = new HashSet<>();
+        final Date updateDate = nodes.get(0).getDate();
         for (Node node : nodes) {
             count += saveTx(node);
+            if (NodeType.CATEGORY.equals(node.getType())
+                    && isEmptyCategory(node.getId())) {
+                continue;
+            }
+            if (node.getParentId() != null) parentCategorySet.add(node.getParentId());
+            if (node.getOldParentId() != null) parentCategorySet.add(node.getOldParentId());
         }
+        parentCategorySet.forEach(categoryId -> updateAllParentCategory(categoryId, updateDate));
         log.info("Finish save {} nodes!", count);
         return count;
     }
 
+
     /**
-     * Реализация метода поиска идентификаторов имеющихся в каталоге категорий товаров.
+     * Приватный технический метод служит для определения,
+     * содержит ли категория товары или нет.
      *
-     * @return список идентификаторов категорий присутствующий в каталоге.
+     * @param id         - идентификатор узла.
+     * @return true категория не содержит товары, false в обратном случае.
      */
-    @Override
-    public Set<UUID> findCategoryAllId() {
-        return new HashSet<>(jdbcTemplate.queryForList("""
-                        SELECT 
-                            id 
-                        FROM 
-                            node 
+    private boolean isEmptyCategory(UUID id) {
+        return jdbcTemplate.queryForObject("""
+                        SELECT count(id)
+                           FROM node
+                           WHERE parent_id = ?::uuid""",
+                Integer.class,
+                id) == 0;
+    }
+
+    /**
+     * Приватный технический метод служит для обновления всех родительских категорий узла,
+     * начиная от не посредственного родителя и заканчивая корневым предком.
+     * Метод возвращает количество обновленных категорий.
+     *
+     * @param id         - идентификатор родительской категории с которой необходимо начать обновление.
+     * @param updateDate - дата обновления.
+     * @return количество обновленных категорий.
+     */
+    public int updateAllParentCategory(UUID id, Date updateDate) {
+        log.info("Start to update all parent category begins with ID: {}", id);
+        final int result = jdbcTemplate.update("""
+                        WITH RECURSIVE r AS (
+                           SELECT id, parent_id
+                           FROM node
+                           WHERE id = ?::uuid
+                           UNION ALL
+                           SELECT node.id, node.parent_id
+                           FROM node
+                              JOIN r
+                                  ON node.id = r.parent_id
+                        )
+                        UPDATE 
+                          node 
+                        SET date = ?::timestamp with time zone 
                         WHERE 
-                            type = ?""",
-                UUID.class,
-                NodeType.CATEGORY));
+                          id 
+                        IN (SELECT id FROM r);
+                        """,
+                id,
+                updateDate);
+        log.info("{} parent category all update begins with ID: {}", result, id);
+        return result;
     }
 
     /**
