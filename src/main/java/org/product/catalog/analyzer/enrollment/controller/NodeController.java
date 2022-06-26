@@ -3,21 +3,27 @@ package org.product.catalog.analyzer.enrollment.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.product.catalog.analyzer.enrollment.dto.ImportRequest;
+import org.product.catalog.analyzer.enrollment.dto.Item;
 import org.product.catalog.analyzer.enrollment.dto.Node;
+import org.product.catalog.analyzer.enrollment.dto.SalesResponse;
 import org.product.catalog.analyzer.enrollment.service.NodeService;
 import org.product.catalog.analyzer.enrollment.validation.exception.ArgumentNotValidException;
 import org.product.catalog.analyzer.enrollment.validation.exception.NotFindNodeException;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Класс, реализующий REST-контролер, который отвечает за обработку запросов к приложению
@@ -107,5 +113,32 @@ public class NodeController {
         final Node result = nodeService.findById(id);
         log.info("Find node with ID: {}", result.getId());
         return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    /**
+     * Метод обрабатывает Get-запрос Получение списка товаров,
+     * цена которых была обновлена за последние 24 часа включительно [now() - 24h, now()] от времени переданном в запросе.
+     *
+     * @param date - указанная дата.
+     * @throws ArgumentNotValidException если какой либо из аргументов запроса не прошёл проверку.
+     */
+    @GetMapping("${urls.sales}")
+    @Tag(name = "Дополнительные задачи")
+    @ApiOperation(value = "- получение списка товаров", notes = """
+            Получение списка товаров, цена которых была обновлена за последние 24 часа включительно [now() - 24h, now()] от времени переданном в запросе. Обновление цены не означает её изменение. Обновления цен удаленных товаров недоступны. При обновлении цены товара, средняя цена категории, которая содержит этот товар, тоже обновляется.
+            """)
+    public SalesResponse salesNode(
+            @RequestParam("date")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date date
+    ) {
+        log.info("Received request to find sale date: {} ", date);
+        return new SalesResponse(nodeService.findSaleList(date).stream().map(node -> new Item(
+                node.getId(),
+                node.getType(),
+                node.getName(),
+                node.getParentId(),
+                node.getPrice(),
+                node.getDate()
+        )).collect(Collectors.toList()));
     }
 }
