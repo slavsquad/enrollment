@@ -7,7 +7,6 @@ import org.product.catalog.analyzer.enrollment.dto.NodeType;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -35,10 +34,9 @@ public class NodeRepositoryImpl implements NodeRepository {
      * @return узел со всеми потомками, или {@code null} если узел не найден.
      */
     @Override
-    @Transactional
-    public Node findById(UUID id) {
-        log.info("Start find node by id:{}", id);
-        final Node result = findByIdTx(id);
+    public Node findDepthNodeById(UUID id) {
+        log.info("Start find depth node by id:{}", id);
+        final Node result = findPlainNodeById(id);
         if (result == null) return result;
         if (NodeType.OFFER.equals(result.getType())) return result;
         Deque<Node> stack = new ArrayDeque<>();
@@ -82,19 +80,19 @@ public class NodeRepositoryImpl implements NodeRepository {
                 }
             }
         }
-        log.info("Finish find node by id:{}", id);
+        log.info("Finish find depth node by id:{}", id);
         return result;
     }
 
     /**
-     * Приватный метод поиска узла без каких-либо потомков по идентификатору,
-     * для исполнения внутри транзакции.
+     * Метод поиска узла без каких-либо потомков по идентификатору.
      * Метод возвращает узел без каких-либо потомков.
      *
      * @param id - идентификатор корневого узла(товара/категории).
      * @return узел каталога товаров, или {@code null} если узел не найден.
      */
-    private Node findByIdTx(UUID id) {
+    public Node findPlainNodeById(UUID id) {
+        log.info("Start find plain node by id:{}", id);
         try {
             return jdbcTemplate.queryForObject("""
                             SELECT id, type, name, parent_id, price, to_char(date, 'yyyy-mm-dd hh24:mi:ss') as date
@@ -105,6 +103,7 @@ public class NodeRepositoryImpl implements NodeRepository {
                             rs.getString("type"),
                             rs.getString("name"),
                             rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
+                            rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
                             rs.getObject("price", Integer.class),
                             rs.getTimestamp("date"),
                             null,
@@ -113,7 +112,7 @@ public class NodeRepositoryImpl implements NodeRepository {
                     ),
                     id);
         } catch (EmptyResultDataAccessException e) {
-            log.info("Node with id:{} didn't find!", id);
+            log.info("Plain node with id:{} didn't find!", id);
             return null;
         }
     }
@@ -137,6 +136,7 @@ public class NodeRepositoryImpl implements NodeRepository {
                         rs.getString("type"),
                         rs.getString("name"),
                         rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
+                        rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
                         rs.getObject("price", Integer.class),
                         rs.getTimestamp("date"),
                         null,
@@ -156,10 +156,17 @@ public class NodeRepositoryImpl implements NodeRepository {
      * @return количество сохранённых позиций.
      */
     @Override
-    @Transactional
     public int save(Node node) {
         log.info("Start save node:{}", node.getId());
-        return saveTx(node);
+        final int result = saveTx(node);
+        if (NodeType.CATEGORY.equals(node.getType())
+                && isEmptyCategory(node.getId())) {
+            return result;
+        }
+        updateAllParentCategory(node.getParentId(), node.getDate());
+        updateAllParentCategory(node.getOldParentId(), node.getDate());
+        log.info("Finish save node:{}", node.getId());
+        return result;
     }
 
     /**
@@ -213,61 +220,89 @@ public class NodeRepositoryImpl implements NodeRepository {
      * @return количество сохранённых позиций.
      */
     @Override
-    @Transactional
     public int saveAll(List<Node> nodes) {
         log.info("Start save nodes!");
         int count = 0;
+        final Set<UUID> parentCategorySet = new HashSet<>();
+        final Date updateDate = nodes.get(0).getDate();
         for (Node node : nodes) {
             count += saveTx(node);
+            if (NodeType.CATEGORY.equals(node.getType())
+                    && isEmptyCategory(node.getId())) {
+                continue;
+            }
+            parentCategorySet.add(node.getParentId());
+            parentCategorySet.add(node.getOldParentId());
         }
+        parentCategorySet.forEach(categoryId -> updateAllParentCategory(categoryId, updateDate));
         log.info("Finish save {} nodes!", count);
         return count;
     }
 
+
     /**
-     * Реализация метода поиска идентификаторов имеющихся в каталоге категорий товаров.
+     * Приватный технический метод служит для определения,
+     * содержит ли категория товары или нет.
      *
-     * @return список идентификаторов категорий присутствующий в каталоге.
+     * @param id         - идентификатор узла.
+     * @return true категория не содержит товары, false в обратном случае.
      */
-    @Override
-    @Transactional
-    public Set<UUID> findCategoryAllId() {
-        return new HashSet<>(jdbcTemplate.queryForList("""
-                        SELECT 
-                            id 
-                        FROM 
-                            node 
-                        WHERE 
-                            type = ?""",
-                UUID.class,
-                NodeType.CATEGORY));
+    private boolean isEmptyCategory(UUID id) {
+        return jdbcTemplate.queryForObject("""
+                        SELECT count(id)
+                           FROM node
+                           WHERE parent_id = ?::uuid""",
+                Integer.class,
+                id) == 0;
     }
 
     /**
-     * Реализация метода удаления узла по идентификатору.
-     * Метод удаляет узел со всеми потомками если таковые имеются.
+     * Приватный технический метод служит для обновления всех родительских категорий узла,
+     * начиная от не посредственного родителя и заканчивая корневым предком.
+     * Метод возвращает количество обновленных категорий.
      *
-     * @param id - идентификатор корневого узла(товара/категории).
-     * @return количество удалённых узлов.
+     * @param id         - идентификатор родительской категории с которой необходимо начать обновление.
+     * @param updateDate - дата обновления.
+     * @return количество обновленных категорий.
      */
-    @Override
-    @Transactional
-    public int deleteById(UUID id) {
-        int result = 0;
-        result = deleteByIdTx(id);
-        if (result == 0) return 0;
-        result += deleteAllDescendantTx(id);
+    public int updateAllParentCategory(UUID id, Date updateDate) {
+
+        if (id == null || updateDate == null) return 0;
+
+        log.info("Start to update all parent category begins with ID: {}", id);
+        final int result = jdbcTemplate.update("""
+                        WITH RECURSIVE r AS (
+                           SELECT id, parent_id
+                           FROM node
+                           WHERE id = ?::uuid
+                           UNION ALL
+                           SELECT node.id, node.parent_id
+                           FROM node
+                              JOIN r
+                                  ON node.id = r.parent_id
+                        )
+                        UPDATE 
+                          node 
+                        SET date = ?::timestamp with time zone 
+                        WHERE 
+                          id 
+                        IN (SELECT id FROM r);
+                        """,
+                id,
+                updateDate);
+        log.info("{} parent category all update begins with ID: {}", result, id);
         return result;
     }
 
     /**
-     * Приватный метод удаляет только корневой узел без потомков.
-     * Предназначен для запуска в транзакции.
+     * Реализация метода удаления узла по идентификатору.
+     * Метод удаляет только узел без потомков.
      *
      * @param id - идентификатор корневого узла(товара/категории).
      * @return количество удалённых узлов.
      */
-    private int deleteByIdTx(UUID id) {
+    @Override
+    public int deleteNodeById(UUID id) {
         log.info("Start to delete only root node with ID: {}", id);
         return jdbcTemplate.update("""
                         DELETE FROM 
@@ -278,13 +313,12 @@ public class NodeRepositoryImpl implements NodeRepository {
     }
 
     /**
-     * Приватный метод удаляет всех потомков заданного узла.
-     * Предназначен для запуска в транзакции.
+     * Метод удаляет всех потомков заданного узла.
      *
      * @param id - идентификатор корневого узла(товара/категории).
      * @return количество удалённых узлов потомков.
      */
-    private int deleteAllDescendantTx(UUID id) {
+    public int deleteAllDescendantById(UUID id) {
         log.info("Start to delete all descendants node with ID: {}", id);
         return jdbcTemplate.update("""
                            WITH RECURSIVE r AS (
