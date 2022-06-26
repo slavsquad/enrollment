@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.product.catalog.analyzer.enrollment.dto.ImportRequest;
 import org.product.catalog.analyzer.enrollment.dto.Node;
-import org.product.catalog.analyzer.enrollment.dto.NodeType;
 import org.product.catalog.analyzer.enrollment.service.NodeService;
 import org.product.catalog.analyzer.enrollment.validation.exception.ArgumentNotValidException;
 import org.product.catalog.analyzer.enrollment.validation.exception.NotFindNodeException;
@@ -17,11 +16,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Класс, реализующий REST-контролер, который отвечает за обработку запросов к приложению
@@ -63,7 +59,7 @@ public class NodeController {
             Гарантируется, что во входных данных нет циклических зависимостей и поле updateDate монотонно возрастает. Гарантируется, что при проверке передаваемое время кратно секундам.
             """)
     public void importNodes(@Valid @RequestBody ImportRequest importRequest) throws ArgumentNotValidException {
-        final List<Node> nodes = importRequest.getNodes();
+        final List<Node> nodes = importRequest.getItems();
         log.info("Received request to import nodes: {} update date: {}.", nodes.size(), importRequest.getUpdateDate());
         nodeService.importNodes(nodes, importRequest.getUpdateDate());
     }
