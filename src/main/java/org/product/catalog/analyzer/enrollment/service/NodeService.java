@@ -30,10 +30,9 @@ public interface NodeService {
      * Метод возвращает количество сохраненных позиций.
      *
      * @param nodes - список узлов, который необходимо добавить в каталог.
-     * @param updateDate - дата импорта узлов в каталог.
      * @throws ArgumentNotValidException если какой либо из узел не прошел проверку.
      */
-    void importNodes(List<Node> nodes, Date updateDate) throws ArgumentNotValidException;
+    void importNodes(List<Node> nodes) throws ArgumentNotValidException;
 
     /**
      * Удаление узла по идентификатору.

@@ -50,14 +50,13 @@ public class NodeServiceImpl implements NodeService {
      * Метод возвращает количество сохраненных позиций.
      *
      * @param nodes      - список узлов, который необходимо добавить в каталог.
-     * @param updateDate - дата импорта узлов в каталог.
      * @throws ArgumentNotValidException если какой либо из узел не прошел проверку.
      */
     @Override
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public void importNodes(List<Node> nodes, Date updateDate) throws ArgumentNotValidException {
+    public void importNodes(List<Node> nodes) throws ArgumentNotValidException {
+        if (nodes.isEmpty()) return;
         validateImportNodes(nodes);
-        nodes.forEach(node -> node.setDate(updateDate));
         log.info("{} nodes are ready to import!", nodes.size());
         nodeRepository.saveAll(nodes);
     }
