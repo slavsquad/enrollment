@@ -36,6 +36,9 @@ public class Node {
 
     private UUID parentId;
 
+    @JsonIgnore
+    private UUID oldParentId;
+
     private Integer price;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
