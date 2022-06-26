@@ -61,7 +61,8 @@ public class NodeController {
     public void importNodes(@Valid @RequestBody ImportRequest importRequest) throws ArgumentNotValidException {
         final List<Node> nodes = importRequest.getItems();
         log.info("Received request to import nodes: {} update date: {}.", nodes.size(), importRequest.getUpdateDate());
-        nodeService.importNodes(nodes, importRequest.getUpdateDate());
+        nodes.forEach(node -> node.setDate(importRequest.getUpdateDate()));
+        nodeService.importNodes(nodes);
     }
 
     /**
