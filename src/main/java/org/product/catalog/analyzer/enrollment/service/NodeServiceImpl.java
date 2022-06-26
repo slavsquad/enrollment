@@ -26,20 +26,6 @@ public class NodeServiceImpl implements NodeService {
 
     private final NodeRepository nodeRepository;
 
-
-    /**
-     * Реализация метода вставки узла(товара/категории) в каталоге товаров,
-     * путем добавленные новой позиций либо обновление текущей.
-     * Метод возвращает количество сохраненных позиций.
-     *
-     * @param node - узел, который необходимо добавить в каталог.
-     */
-    @Override
-    public void addNode(Node node) {
-        log.info("Node with id:{} is ready to import!", node.getId());
-        nodeRepository.save(node);
-    }
-
     /**
      * Реализация метода поиска узла в полную глубину по идентификатору.
      * Метод возвращает узел со всеми потомками, полностью отображая
