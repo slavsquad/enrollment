@@ -106,18 +106,23 @@ public class NodeServiceImpl implements NodeService {
                 throw new ArgumentNotValidException("Offer price must not be null or be positive number!");
             }
 
+            UUID oldParentId = null;
             final Node oldNode = nodeRepository.findPlainNodeById(importNode.getId());
-            if (oldNode != null && !importNode.getType().equals(oldNode.getType())) {
-                throw new ArgumentNotValidException("Change node type is not allowed!");
+            if (oldNode != null) {
+                oldParentId = oldNode.getOldParentId();
+                if (!importNode.getType().equals(oldNode.getType()))
+                    throw new ArgumentNotValidException("Change node type is not allowed!");
             }
 
             if (importNode.getParentId() != null && !importCategorySet.contains(importNode.getParentId())) {
                 final Node parentCategory = nodeRepository.findPlainNodeById(importNode.getParentId());
                 if (parentCategory == null || NodeType.OFFER.equals(parentCategory.getType())) {
-                    throw new ArgumentNotValidException("Node with ID: " + importNode.getParentId() + " is not a category or didn't find!");
+                    throw new ArgumentNotValidException("Category with ID: " + importNode.getParentId() + " is didn't find or node is not a category!");
                 }
+                oldParentId = parentCategory.getId();
                 importCategorySet.add(parentCategory.getId());
             }
+            importNode.setOldParentId(oldParentId);
         }
 
         log.info("Success validation: {} nodes for import.", nodes.size());
