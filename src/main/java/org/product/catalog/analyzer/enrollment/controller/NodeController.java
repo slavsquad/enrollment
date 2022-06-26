@@ -65,44 +65,7 @@ public class NodeController {
     public void importNodes(@Valid @RequestBody ImportRequest importRequest) throws ArgumentNotValidException {
         final List<Node> nodes = importRequest.getNodes();
         log.info("Received request to import nodes: {} update date: {}.", nodes.size(), importRequest.getUpdateDate());
-        validateImportNodes(nodes);
         nodeService.importNodes(nodes, importRequest.getUpdateDate());
-    }
-
-    /**
-     * Приватный метод реализующий ряд проверок перед запуском импорта узлов.
-     *
-     * @param nodes - список узлов которые необходимо проверить.
-     * @throws ArgumentNotValidException если какой либо из узел не прошел проверку.
-     */
-    private void validateImportNodes(List<Node> nodes) throws ArgumentNotValidException {
-        log.info("Start validation: {} nodes for import.", nodes.size());
-        final Set<UUID> idSet = new HashSet<>();
-
-        final Set<UUID> categoryIdSet = nodeService.findCategoryAllId();
-        categoryIdSet.addAll(nodes
-                .stream()
-                .filter(node -> NodeType.CATEGORY.equals(node.getType()))
-                .map(Node::getId)
-                .collect(Collectors.toSet()));
-
-        for (Node node : nodes) {
-            idSet.add(node.getId());
-            if (NodeType.CATEGORY.equals(node.getType()) && node.getPrice() != null) {
-                throw new ArgumentNotValidException("Category price must be null!");
-            }
-            if (NodeType.OFFER.equals(node.getType()) && (node.getPrice() == null || node.getPrice() < 0)) {
-                throw new ArgumentNotValidException("Offer price must not be null or be positive number!");
-            }
-            if (node.getParentId() != null && !categoryIdSet.contains(node.getParentId())) {
-                throw new ArgumentNotValidException("Parent ID: " + node.getParentId() + " is not a category!");
-            }
-        }
-
-        if (idSet.size() != nodes.size()) {
-            throw new ArgumentNotValidException("Import records contains duplicates id!");
-        }
-        log.info("Finish validation: {} nodes for import.", nodes.size());
     }
 
     /**

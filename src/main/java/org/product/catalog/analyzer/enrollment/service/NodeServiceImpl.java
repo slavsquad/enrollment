@@ -11,10 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Реализация интерфейса описывающего сервисные методы вставки, поиска и удаления узлов.
@@ -71,11 +69,48 @@ public class NodeServiceImpl implements NodeService {
      */
     @Override
     public void importNodes(List<Node> nodes, Date updateDate) throws ArgumentNotValidException {
+        validateImportNodes(nodes);
         for (Node item : nodes) {
             item.setDate(updateDate);
         }
         log.info("{} nodes are ready to import!", nodes.size());
         nodeRepository.saveAll(nodes);
+    }
+
+    /**
+     * Приватный метод реализующий ряд проверок перед запуском импорта узлов.
+     *
+     * @param nodes - список узлов которые необходимо проверить.
+     * @throws ArgumentNotValidException если какой либо из узел не прошел проверку.
+     */
+    private void validateImportNodes(List<Node> nodes) throws ArgumentNotValidException {
+        log.info("Start validation: {} nodes for import.", nodes.size());
+        final Set<UUID> idSet = new HashSet<>();
+
+        final Set<UUID> categoryIdSet = findCategoryAllId();
+        categoryIdSet.addAll(nodes
+                .stream()
+                .filter(node -> NodeType.CATEGORY.equals(node.getType()))
+                .map(Node::getId)
+                .collect(Collectors.toSet()));
+
+        for (Node node : nodes) {
+            idSet.add(node.getId());
+            if (NodeType.CATEGORY.equals(node.getType()) && node.getPrice() != null) {
+                throw new ArgumentNotValidException("Category price must be null!");
+            }
+            if (NodeType.OFFER.equals(node.getType()) && (node.getPrice() == null || node.getPrice() < 0)) {
+                throw new ArgumentNotValidException("Offer price must not be null or be positive number!");
+            }
+            if (node.getParentId() != null && !categoryIdSet.contains(node.getParentId())) {
+                throw new ArgumentNotValidException("Parent ID: " + node.getParentId() + " is not a category!");
+            }
+        }
+
+        if (idSet.size() != nodes.size()) {
+            throw new ArgumentNotValidException("Import records contains duplicates id!");
+        }
+        log.info("Finish validation: {} nodes for import.", nodes.size());
     }
 
     /**
