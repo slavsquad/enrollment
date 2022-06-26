@@ -68,11 +68,10 @@ public class NodeServiceImpl implements NodeService {
      * @throws ArgumentNotValidException если какой либо из узел не прошел проверку.
      */
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void importNodes(List<Node> nodes, Date updateDate) throws ArgumentNotValidException {
         validateImportNodes(nodes);
-        for (Node item : nodes) {
-            item.setDate(updateDate);
-        }
+        nodes.forEach(node -> node.setDate(updateDate));
         log.info("{} nodes are ready to import!", nodes.size());
         nodeRepository.saveAll(nodes);
     }
@@ -85,44 +84,43 @@ public class NodeServiceImpl implements NodeService {
      */
     private void validateImportNodes(List<Node> nodes) throws ArgumentNotValidException {
         log.info("Start validation: {} nodes for import.", nodes.size());
-        final Set<UUID> idSet = new HashSet<>();
 
-        final Set<UUID> categoryIdSet = findCategoryAllId();
-        categoryIdSet.addAll(nodes
+        if (nodes.size() != nodes.stream().map(Node::getId).collect(Collectors.toSet()).size()) {
+            throw new ArgumentNotValidException("Import records contains duplicates id!");
+        }
+
+        final Set<UUID> importCategorySet = nodes
                 .stream()
                 .filter(node -> NodeType.CATEGORY.equals(node.getType()))
                 .map(Node::getId)
-                .collect(Collectors.toSet()));
+                .collect(Collectors.toSet());
 
-        for (Node node : nodes) {
-            idSet.add(node.getId());
-            if (NodeType.CATEGORY.equals(node.getType()) && node.getPrice() != null) {
+
+        for (Node importNode : nodes) {
+
+            if (NodeType.CATEGORY.equals(importNode.getType()) && importNode.getPrice() != null) {
                 throw new ArgumentNotValidException("Category price must be null!");
             }
-            if (NodeType.OFFER.equals(node.getType()) && (node.getPrice() == null || node.getPrice() < 0)) {
+
+            if (NodeType.OFFER.equals(importNode.getType()) && (importNode.getPrice() == null || importNode.getPrice() < 0)) {
                 throw new ArgumentNotValidException("Offer price must not be null or be positive number!");
             }
-            if (node.getParentId() != null && !categoryIdSet.contains(node.getParentId())) {
-                throw new ArgumentNotValidException("Parent ID: " + node.getParentId() + " is not a category!");
+
+            final Node oldNode = nodeRepository.findPlainNodeById(importNode.getId());
+            if (oldNode != null && !importNode.getType().equals(oldNode.getType())) {
+                throw new ArgumentNotValidException("Change node type is not allowed!");
+            }
+
+            if (importNode.getParentId() != null && !importCategorySet.contains(importNode.getParentId())) {
+                final Node parentCategory = nodeRepository.findPlainNodeById(importNode.getParentId());
+                if (parentCategory == null || NodeType.OFFER.equals(parentCategory.getType())) {
+                    throw new ArgumentNotValidException("Node with ID: " + importNode.getParentId() + " is not a category or didn't find!");
+                }
+                importCategorySet.add(parentCategory.getId());
             }
         }
 
-        if (idSet.size() != nodes.size()) {
-            throw new ArgumentNotValidException("Import records contains duplicates id!");
-        }
-        log.info("Finish validation: {} nodes for import.", nodes.size());
-    }
-
-    /**
-     * Реализация поиска идентификаторов имеющихся в каталоге категорий товаров.
-     *
-     * @return список идентификаторов категорий присутствующий в каталоге.
-     */
-    @Override
-    public Set<UUID> findCategoryAllId() {
-        final Set<UUID> categoryIdSet = nodeRepository.findCategoryAllId();
-        log.info("Find {} id category from repository!", categoryIdSet.size());
-        return categoryIdSet;
+        log.info("Success validation: {} nodes for import.", nodes.size());
     }
 
     /**

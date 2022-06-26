@@ -45,13 +45,6 @@ public interface NodeService {
     void importNodes(List<Node> nodes, Date updateDate) throws ArgumentNotValidException;
 
     /**
-     * Поиск идентификаторов имеющихся в каталоге категорий товаров.
-     *
-     * @return список идентификаторов категорий присутствующий в каталоге.
-     */
-    Set<UUID> findCategoryAllId();
-
-    /**
      * Удаление узла по идентификатору.
      * Метод удаляет узел со всеми потомками если таковые имеются.
      *
