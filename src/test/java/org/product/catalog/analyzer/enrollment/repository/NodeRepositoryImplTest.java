@@ -16,6 +16,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,6 +32,8 @@ class NodeRepositoryImplTest {
     NodeRepository underTestRepository;
     final Date updateDate = new Date();
     Node expectedNode;
+    UUID smartphoneCategoryId;
+    UUID tvCategoryId;
 
     @Autowired
     public NodeRepositoryImplTest(JdbcTemplate jdbcTemplate) {
@@ -41,7 +44,12 @@ class NodeRepositoryImplTest {
     @BeforeEach
     public void setUp() {
 
-        expectedNode = new Node(UUID.randomUUID(),
+        smartphoneCategoryId = UUID.randomUUID();
+        tvCategoryId = UUID.randomUUID();
+
+
+        expectedNode = new Node(
+                UUID.randomUUID(),
                 NodeType.CATEGORY,
                 "Товары",
                 null,
@@ -53,7 +61,8 @@ class NodeRepositoryImplTest {
                 0);
         underTestRepository.save(expectedNode);
 
-        final Node phoneCategory = new Node(UUID.randomUUID(),
+        final Node smartPhoneCategory = new Node(
+                smartphoneCategoryId,
                 NodeType.CATEGORY,
                 "Смартфоны",
                 expectedNode.getId(),
@@ -63,43 +72,42 @@ class NodeRepositoryImplTest {
                 new ArrayList<>(),
                 0,
                 0);
-        underTestRepository.save(phoneCategory);
+        underTestRepository.save(smartPhoneCategory);
 
-        final Node jPhone = new Node(UUID.randomUUID(),
+        final Node jPhone = new Node(
+                UUID.randomUUID(),
                 NodeType.OFFER,
                 "jPhone 13",
-                phoneCategory.getId(),
-                phoneCategory.getId(),
+                smartPhoneCategory.getId(),
+                smartPhoneCategory.getId(),
                 79999,
                 updateDate,
                 null,
-                0,
-                0);
+                1,
+                79999);
         underTestRepository.save(jPhone);
-        jPhone.setOfferCount(1);
-        jPhone.setSum(jPhone.getPrice());
 
-        final Node xomiаPhone = new Node(UUID.randomUUID(),
+        final Node xomiаPhone = new Node(
+                UUID.randomUUID(),
                 NodeType.OFFER,
                 "Xomiа Readme 10",
-                phoneCategory.getId(),
-                phoneCategory.getId(),
+                smartPhoneCategory.getId(),
+                smartPhoneCategory.getId(),
                 59999,
                 updateDate,
                 null,
-                0,
-                0);
+                1,
+                59999);
         underTestRepository.save(xomiаPhone);
-        xomiаPhone.setOfferCount(1);
-        xomiаPhone.setSum(xomiаPhone.getPrice());
 
         final List<Node> phoneChildren = Arrays.asList(jPhone, xomiаPhone);
-        phoneCategory.setChildren(phoneChildren);
-        phoneCategory.setSum(phoneChildren.stream().mapToInt(Node::getSum).sum());
-        phoneCategory.setOfferCount(phoneChildren.stream().mapToInt(Node::getOfferCount).sum());
-        phoneCategory.setPrice(phoneCategory.getSum() / phoneCategory.getOfferCount());
+        smartPhoneCategory.setChildren(phoneChildren);
+        smartPhoneCategory.setSum(phoneChildren.stream().mapToInt(Node::getSum).sum());
+        smartPhoneCategory.setOfferCount(phoneChildren.stream().mapToInt(Node::getOfferCount).sum());
+        smartPhoneCategory.setPrice(smartPhoneCategory.getSum() / smartPhoneCategory.getOfferCount());
 
-        final Node tvCategory = new Node(UUID.randomUUID(),
+        final Node tvCategory = new Node(
+                tvCategoryId,
                 NodeType.CATEGORY,
                 "Телевизоры",
                 expectedNode.getId(),
@@ -111,7 +119,8 @@ class NodeRepositoryImplTest {
                 0);
         underTestRepository.save(tvCategory);
 
-        final Node samsonTv = new Node(UUID.randomUUID(),
+        final Node samsonTv = new Node(
+                UUID.randomUUID(),
                 NodeType.OFFER,
                 "Samson 70\\\" LED UHD Smart",
                 tvCategory.getId(),
@@ -119,13 +128,12 @@ class NodeRepositoryImplTest {
                 32999,
                 updateDate,
                 new ArrayList<>(),
-                0,
-                0);
+                1,
+                32999);
         underTestRepository.save(samsonTv);
-        samsonTv.setOfferCount(1);
-        samsonTv.setSum(samsonTv.getPrice());
 
-        final Node phyllisTv = new Node(UUID.randomUUID(),
+        final Node phyllisTv = new Node(
+                UUID.randomUUID(),
                 NodeType.OFFER,
                 "Phyllis 50\\\" LED UHD Smarter",
                 tvCategory.getId(),
@@ -133,13 +141,12 @@ class NodeRepositoryImplTest {
                 49999,
                 updateDate,
                 new ArrayList<>(),
-                0,
-                0);
+                1,
+                49999);
         underTestRepository.save(phyllisTv);
-        phyllisTv.setOfferCount(1);
-        phyllisTv.setSum(phyllisTv.getPrice());
 
-        final Node goldstarTv = new Node(UUID.randomUUID(),
+        final Node goldstarTv = new Node(
+                UUID.randomUUID(),
                 NodeType.OFFER,
                 "Goldstar 65\\\" LED UHD LOL Very Smart",
                 tvCategory.getId(),
@@ -147,11 +154,9 @@ class NodeRepositoryImplTest {
                 69999,
                 updateDate,
                 new ArrayList<>(),
-                0,
-                0);
+                1,
+                69999);
         underTestRepository.save(goldstarTv);
-        goldstarTv.setOfferCount(1);
-        goldstarTv.setSum(goldstarTv.getPrice());
 
         final List<Node> tvChildren = Arrays.asList(samsonTv, phyllisTv, goldstarTv);
         tvCategory.setChildren(tvChildren);
@@ -159,7 +164,7 @@ class NodeRepositoryImplTest {
         tvCategory.setOfferCount(tvChildren.stream().mapToInt(Node::getOfferCount).sum());
         tvCategory.setPrice(tvCategory.getSum() / tvCategory.getOfferCount());
 
-        final List<Node> goodChildren = Arrays.asList(tvCategory, phoneCategory);
+        final List<Node> goodChildren = Arrays.asList(tvCategory, smartPhoneCategory);
         expectedNode.setChildren(goodChildren);
         expectedNode.setSum(goodChildren.stream().mapToInt(Node::getSum).sum());
         expectedNode.setOfferCount(goodChildren.stream().mapToInt(Node::getOfferCount).sum());
@@ -240,17 +245,62 @@ class NodeRepositoryImplTest {
 
     @Test
     void save() {
-/*        final Node newCategory = new Node(UUID.randomUUID(),
+
+        Date firstUpdate = new Date();
+
+        final Node phoneCategory = new Node(
+                UUID.randomUUID(),
                 NodeType.CATEGORY,
-                "Телевизоры",
+                "Телефоны",
                 expectedNode.getId(),
                 expectedNode.getId(),
                 null,
-                updateDate,
+                firstUpdate,
                 new ArrayList<>(),
                 0,
                 0);
-        underTestRepository.save(tvCategory);*/
+
+        assertThat(underTestRepository.save(phoneCategory)).isEqualTo(1);
+        assertThat(underTestRepository.findPlainNodeById(expectedNode.getId()).getDate()).isCloseTo(expectedNode.getDate(), 1000);
+        assertThat(underTestRepository.findPlainNodeById(phoneCategory.getId()).getDate()).isCloseTo(firstUpdate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(phoneCategory.getId()))
+                .usingRecursiveComparison()
+                .withStrictTypeChecking()
+                .ignoringFields("children", "date")
+                .isEqualTo(phoneCategory);
+
+        final Node nokia = new Node(
+                UUID.randomUUID(),
+                NodeType.OFFER,
+                "Nokia 3310",
+                phoneCategory.getId(),
+                phoneCategory.getId(),
+                69999,
+                firstUpdate,
+                new ArrayList<>(),
+                1,
+                69999);
+
+        assertThat(underTestRepository.save(nokia)).isEqualTo(1);
+        assertThat(underTestRepository.findPlainNodeById(expectedNode.getId()).getDate()).isCloseTo(firstUpdate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(phoneCategory.getId()).getDate()).isCloseTo(firstUpdate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(nokia.getId()).getDate()).isCloseTo(firstUpdate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(nokia.getId()).getDate()).isCloseTo(firstUpdate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(nokia.getId()))
+                .usingRecursiveComparison()
+                .withStrictTypeChecking()
+                .ignoringFields("children", "date")
+                .isEqualTo(nokia);
+
+        Date secondUpdate = new Date();
+        Node updateSmartPhone = underTestRepository.findPlainNodeById(smartphoneCategoryId);
+        updateSmartPhone.setDate(secondUpdate);
+        updateSmartPhone.setParentId(phoneCategory.getId());
+        underTestRepository.save(updateSmartPhone);
+        assertThat(underTestRepository.findPlainNodeById(expectedNode.getId()).getDate()).isCloseTo(secondUpdate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(phoneCategory.getId()).getDate()).isCloseTo(secondUpdate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(smartphoneCategoryId).getDate()).isCloseTo(secondUpdate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(tvCategoryId).getDate()).isCloseTo(updateDate, 1000);
     }
 
     @Test
