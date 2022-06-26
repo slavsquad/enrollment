@@ -10,6 +10,7 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.product.catalog.analyzer.enrollment.dto.Node;
 import org.product.catalog.analyzer.enrollment.dto.NodeType;
+import org.product.catalog.analyzer.enrollment.validation.exception.ArgumentNotValidException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.jdbc.DataJdbcTest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -285,7 +286,6 @@ class NodeRepositoryImplTest {
         assertThat(underTestRepository.findPlainNodeById(expectedNode.getId()).getDate()).isCloseTo(firstUpdate, 1000);
         assertThat(underTestRepository.findPlainNodeById(phoneCategory.getId()).getDate()).isCloseTo(firstUpdate, 1000);
         assertThat(underTestRepository.findPlainNodeById(nokia.getId()).getDate()).isCloseTo(firstUpdate, 1000);
-        assertThat(underTestRepository.findPlainNodeById(nokia.getId()).getDate()).isCloseTo(firstUpdate, 1000);
         assertThat(underTestRepository.findPlainNodeById(nokia.getId()))
                 .usingRecursiveComparison()
                 .withStrictTypeChecking()
@@ -305,6 +305,53 @@ class NodeRepositoryImplTest {
 
     @Test
     void saveAll() {
+        Date firstUpdate = new Date();
+
+        final Node phoneCategory = new Node(
+                UUID.randomUUID(),
+                NodeType.CATEGORY,
+                "Телефоны",
+                expectedNode.getId(),
+                expectedNode.getId(),
+                null,
+                firstUpdate,
+                new ArrayList<>(),
+                0,
+                0);
+
+        final Node nokia = new Node(
+                UUID.randomUUID(),
+                NodeType.OFFER,
+                "Nokia 3310",
+                phoneCategory.getId(),
+                phoneCategory.getId(),
+                69999,
+                firstUpdate,
+                new ArrayList<>(),
+                1,
+                69999);
+
+        assertThat(underTestRepository.saveAll(Arrays.asList(phoneCategory, nokia))).isEqualTo(2);
+        assertThat(underTestRepository.findPlainNodeById(expectedNode.getId()).getDate()).isCloseTo(firstUpdate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(phoneCategory.getId()).getDate()).isCloseTo(firstUpdate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(nokia.getId()).getDate()).isCloseTo(firstUpdate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(tvCategoryId).getDate()).isCloseTo(updateDate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(nokia.getId()))
+                .usingRecursiveComparison()
+                .withStrictTypeChecking()
+                .ignoringFields("children", "date")
+                .isEqualTo(nokia);
+
+        Date secondUpdate = new Date();
+        phoneCategory.setDate(secondUpdate);
+        phoneCategory.setParentId(smartphoneCategoryId);
+        nokia.setDate(secondUpdate);
+
+        assertThat(underTestRepository.saveAll(Arrays.asList(phoneCategory, nokia))).isEqualTo(2);
+        assertThat(underTestRepository.findPlainNodeById(expectedNode.getId()).getDate()).isCloseTo(secondUpdate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(phoneCategory.getId()).getDate()).isCloseTo(secondUpdate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(nokia.getId()).getDate()).isCloseTo(secondUpdate, 1000);
+        assertThat(underTestRepository.findPlainNodeById(tvCategoryId).getDate()).isCloseTo(updateDate, 1000);
     }
 
     @Test
