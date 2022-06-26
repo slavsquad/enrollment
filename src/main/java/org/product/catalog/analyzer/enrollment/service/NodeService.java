@@ -4,7 +4,9 @@ import org.product.catalog.analyzer.enrollment.dto.Node;
 import org.product.catalog.analyzer.enrollment.validation.exception.ArgumentNotValidException;
 import org.product.catalog.analyzer.enrollment.validation.exception.NotFindNodeException;
 
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Интерфейс, описывающий сервисные методы вставки, поиска и удаления узлов.
@@ -43,4 +45,13 @@ public interface NodeService {
      * @throws NotFindNodeException если элемент не найден.
      */
     int deleteById(UUID id) throws NotFindNodeException;
+
+    /**
+     * Получение списка товаров, цена которых была обновлена за последние 24 часа включительно
+     * [now() - 24h, now()] от времени переданном в запросе.
+     *
+     * @param date - идентификатор корневого узла(товара/категории).
+     * @return список товаров которые были обновлены.
+     */
+    List<Node> findSaleList(Date date);
 }

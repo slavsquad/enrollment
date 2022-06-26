@@ -1,10 +1,9 @@
 package org.product.catalog.analyzer.enrollment.repository;
 
 import org.product.catalog.analyzer.enrollment.dto.Node;
-import org.product.catalog.analyzer.enrollment.validation.exception.ArgumentNotValidException;
 
+import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -69,4 +68,13 @@ public interface NodeRepository {
      * @return количество удалённых узлов потомков.
      */
     int deleteAllDescendantById(UUID id);
+
+    /**
+     * Получение списка товаров, цена которых была обновлена за последние 24 часа включительно
+     * [now() - 24h, now()] от времени переданном в запросе.
+     *
+     * @param date - идентификатор корневого узла(товара/категории).
+     * @return список товаров которые были обновлены.
+     */
+    List<Node> findSaleNodeList(Date date);
 }
