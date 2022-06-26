@@ -14,6 +14,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -394,5 +395,29 @@ class NodeRepositoryImplTest {
                 }
             }
         }
+    }
+    @Test
+    void findSaleNodeList() {
+        Date date = new Date();
+        Set<UUID> findSaleIdSet = underTestRepository.findSaleNodeList(date)
+                .stream()
+                .map(Node::getId)
+                .collect(Collectors.toSet());
+
+        Set<UUID> expectedSet = new HashSet<>();
+        Deque<Node> stack = new ArrayDeque<>();
+        stack.push(expectedNode);
+        while (!stack.isEmpty()){
+            final Node parent = stack.pop();
+            if (NodeType.OFFER.equals(parent.getType())){
+                expectedSet.add(parent.getId());
+            }
+            if (parent.getChildren() != null){
+                for (Node child:parent.getChildren()){
+                    stack.push(child);
+                }
+            }
+        }
+        assertThat(findSaleIdSet).isEqualTo(expectedSet);
     }
 }
