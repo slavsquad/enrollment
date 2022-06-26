@@ -337,4 +337,39 @@ public class NodeRepositoryImpl implements NodeRepository {
                             id in (SELECT id FROM r)""",
                 id);
     }
+
+    /**
+     * Реализация метода получение списка товаров, цена которых была обновлена за последние 24 часа включительно
+     * [now() - 24h, now()] от времени переданном в запросе.
+     *
+     * @param date - идентификатор корневого узла(товара/категории).
+     * @return список товаров которые были обновлены.
+     */
+    @Override
+    public List<Node> findSaleNodeList(Date date) {
+        return jdbcTemplate.query("""
+                        SELECT 
+                            id, type, name, parent_id, price, to_char(date, 'yyyy-mm-dd hh24:mi:ss') as date
+                        FROM 
+                            node
+                        WHERE 
+                            type = ? 
+                                AND
+                            date >= ?::timestamp with time zone - interval '24 hour' and date <= ?::timestamp with time zone""",
+                (rs, rowNum) -> new Node(
+                        UUID.fromString(rs.getString("id")),
+                        rs.getString("type"),
+                        rs.getString("name"),
+                        rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
+                        rs.getString("parent_id") == null ? null : UUID.fromString(rs.getString("parent_id")),
+                        rs.getObject("price", Integer.class),
+                        rs.getTimestamp("date"),
+                        null,
+                        NodeType.OFFER.equals(rs.getString("type")) ? 1 : 0,
+                        rs.getInt("price")
+                ),
+                NodeType.OFFER,
+                date,
+                date);
+    }
 }
