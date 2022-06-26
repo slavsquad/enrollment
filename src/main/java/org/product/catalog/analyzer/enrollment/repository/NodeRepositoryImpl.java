@@ -159,8 +159,12 @@ public class NodeRepositoryImpl implements NodeRepository {
     public int save(Node node) {
         log.info("Start save node:{}", node.getId());
         final int result = saveTx(node);
-        if (node.getParentId() == null) return result;
+        if (NodeType.CATEGORY.equals(node.getType())
+                && isEmptyCategory(node.getId())) {
+            return result;
+        }
         updateAllParentCategory(node.getParentId(), node.getDate());
+        updateAllParentCategory(node.getOldParentId(), node.getDate());
         log.info("Finish save node:{}", node.getId());
         return result;
     }
@@ -227,8 +231,8 @@ public class NodeRepositoryImpl implements NodeRepository {
                     && isEmptyCategory(node.getId())) {
                 continue;
             }
-            if (node.getParentId() != null) parentCategorySet.add(node.getParentId());
-            if (node.getOldParentId() != null) parentCategorySet.add(node.getOldParentId());
+            parentCategorySet.add(node.getParentId());
+            parentCategorySet.add(node.getOldParentId());
         }
         parentCategorySet.forEach(categoryId -> updateAllParentCategory(categoryId, updateDate));
         log.info("Finish save {} nodes!", count);
@@ -262,6 +266,9 @@ public class NodeRepositoryImpl implements NodeRepository {
      * @return количество обновленных категорий.
      */
     public int updateAllParentCategory(UUID id, Date updateDate) {
+
+        if (id == null || updateDate == null) return 0;
+
         log.info("Start to update all parent category begins with ID: {}", id);
         final int result = jdbcTemplate.update("""
                         WITH RECURSIVE r AS (

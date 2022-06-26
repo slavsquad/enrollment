@@ -25,7 +25,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJdbcTest
 @RunWith(SpringRunner.class)
 @AutoConfigureEmbeddedDatabase(provider = ZONKY)
-@ExtendWith(MockitoExtension.class)
 class NodeRepositoryImplTest {
 
     JdbcTemplate jdbcTemplate;
@@ -47,6 +46,7 @@ class NodeRepositoryImplTest {
                 "Товары",
                 null,
                 null,
+                null,
                 updateDate,
                 new ArrayList<>(),
                 0,
@@ -56,6 +56,7 @@ class NodeRepositoryImplTest {
         final Node phoneCategory = new Node(UUID.randomUUID(),
                 NodeType.CATEGORY,
                 "Смартфоны",
+                expectedNode.getId(),
                 expectedNode.getId(),
                 null,
                 updateDate,
@@ -67,6 +68,7 @@ class NodeRepositoryImplTest {
         final Node jPhone = new Node(UUID.randomUUID(),
                 NodeType.OFFER,
                 "jPhone 13",
+                phoneCategory.getId(),
                 phoneCategory.getId(),
                 79999,
                 updateDate,
@@ -80,6 +82,7 @@ class NodeRepositoryImplTest {
         final Node xomiаPhone = new Node(UUID.randomUUID(),
                 NodeType.OFFER,
                 "Xomiа Readme 10",
+                phoneCategory.getId(),
                 phoneCategory.getId(),
                 59999,
                 updateDate,
@@ -100,6 +103,7 @@ class NodeRepositoryImplTest {
                 NodeType.CATEGORY,
                 "Телевизоры",
                 expectedNode.getId(),
+                expectedNode.getId(),
                 null,
                 updateDate,
                 new ArrayList<>(),
@@ -110,6 +114,7 @@ class NodeRepositoryImplTest {
         final Node samsonTv = new Node(UUID.randomUUID(),
                 NodeType.OFFER,
                 "Samson 70\\\" LED UHD Smart",
+                tvCategory.getId(),
                 tvCategory.getId(),
                 32999,
                 updateDate,
@@ -124,6 +129,7 @@ class NodeRepositoryImplTest {
                 NodeType.OFFER,
                 "Phyllis 50\\\" LED UHD Smarter",
                 tvCategory.getId(),
+                tvCategory.getId(),
                 49999,
                 updateDate,
                 new ArrayList<>(),
@@ -136,6 +142,7 @@ class NodeRepositoryImplTest {
         final Node goldstarTv = new Node(UUID.randomUUID(),
                 NodeType.OFFER,
                 "Goldstar 65\\\" LED UHD LOL Very Smart",
+                tvCategory.getId(),
                 tvCategory.getId(),
                 69999,
                 updateDate,
@@ -233,15 +240,21 @@ class NodeRepositoryImplTest {
 
     @Test
     void save() {
-
+/*        final Node newCategory = new Node(UUID.randomUUID(),
+                NodeType.CATEGORY,
+                "Телевизоры",
+                expectedNode.getId(),
+                expectedNode.getId(),
+                null,
+                updateDate,
+                new ArrayList<>(),
+                0,
+                0);
+        underTestRepository.save(tvCategory);*/
     }
 
     @Test
     void saveAll() {
-    }
-
-    @Test
-    void findCategoryAllId() {
     }
 
     @Test
